@@ -1,3 +1,12 @@
+---
+title: VoiceClinicAgent
+emoji: 🏥
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # VoiceClinicAgent (ClinicVoiceRL)
 
 OpenEnv-compatible reinforcement learning environment for evaluating autonomous agents that handle clinic appointment bookings through simulated voice transcripts.
