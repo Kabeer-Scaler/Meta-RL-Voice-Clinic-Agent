@@ -1,0 +1,133 @@
+{
+  "task_id": "medium_003",
+  "task_level": "medium",
+  "max_turns": 20,
+  "description": "Elderly patient with language mixing - High-risk patient with chronic conditions",
+  
+  "patient_profile": {
+    "patient_id": "P2003",
+    "symptoms": "dizziness and fatigue",
+    "symptoms_severity": 0.6,
+    "duration_days": 7,
+    "pain_level": 0.4,
+    "urgency_level": 0.5,
+    "language_mix": 0.3,
+    "vagueness_level": 0.6,
+    "parent_booking": false,
+    "preferences": {
+      "preferred_time": "morning",
+      "preferred_department": "cardiology"
+    },
+    "hidden_facts": {
+      "symptoms": "Mujhe chakkar aa rahe hain aur bahut thakaan feel ho rahi hai",
+      "duration": "Ek hafte se",
+      "severity": "Sometimes I feel very dizzy, especially when standing",
+      "preferred_time": "Morning time is better for me",
+      "department": "cardiology",
+      "blood_pressure": "My BP has been high lately"
+    }
+  },
+  
+  "clinical_history": {
+    "patient_id": "P2003",
+    "has_history": true,
+    "chronic_conditions": ["hypertension", "diabetes"],
+    "allergies": [],
+    "prior_visits": [
+      {
+        "date": "2026-02-10",
+        "department": "cardiology",
+        "reason": "blood pressure check",
+        "doctor": "Dr. Sharma",
+        "outcome": "medication adjusted"
+      },
+      {
+        "date": "2026-01-05",
+        "department": "general",
+        "reason": "diabetes followup",
+        "doctor": "Dr. Patel",
+        "outcome": "stable"
+      }
+    ],
+    "prior_escalations": [],
+    "language_preference": "hindi",
+    "slot_preference_time": "morning",
+    "preferred_department": "cardiology",
+    "active_problems": ["hypertension", "diabetes"],
+    "current_medications": ["metformin", "lisinopril"],
+    "high_risk_flag": true,
+    "frequent_visitor": true
+  },
+  
+  "hidden_facts": {
+    "urgency_score": 0.5,
+    "deterioration_rate": 0.0,
+    "correct_department": "cardiology"
+  },
+  
+  "clinic_config": {
+    "departments": ["general", "cardiology"],
+    "initial_slots": {
+      "general": [
+        {
+          "slot_id": "GEN_2026_04_03_09_30",
+          "datetime": "2026-04-03T09:30:00",
+          "doctor": "Dr. Kumar",
+          "department": "general"
+        },
+        {
+          "slot_id": "GEN_2026_04_04_09_30",
+          "datetime": "2026-04-04T09:30:00",
+          "doctor": "Dr. Singh",
+          "department": "general"
+        }
+      ],
+      "cardiology": [
+        {
+          "slot_id": "CARD_2026_04_05_10_00",
+          "datetime": "2026-04-05T10:00:00",
+          "doctor": "Dr. Sharma",
+          "department": "cardiology"
+        }
+      ]
+    },
+    "doctor_delays": {}
+  },
+  
+  "initial_clinic_state": {
+    "available_slots": {
+      "general": ["GEN_2026_04_03_09_30", "GEN_2026_04_04_09_30"],
+      "cardiology": ["CARD_2026_04_05_10_00"]
+    },
+    "doctor_delay_minutes": 30,
+    "urgent_queue_length": 3
+  },
+  
+  "timed_events": [],
+  
+  "ground_truth": {
+    "correct_department": "cardiology",
+    "urgency_level": 0.5,
+    "slot_preferences": {
+      "time_of_day": "morning",
+      "preferred_doctor": "Dr. Sharma"
+    },
+    "expected_outcome": "booking_confirmed"
+  },
+  
+  "success_criteria": {
+    "must_use_history": true,
+    "must_handle_language_mixing": true,
+    "must_consider_high_risk": true,
+    "min_info_collected": ["symptoms", "duration", "blood_pressure_status"],
+    "max_turns_for_perfect": 10,
+    "acceptable_outcomes": ["booking_confirmed"],
+    "forbidden_questions": ["name", "phone", "address", "aadhaar", "insurance_id"]
+  },
+  
+  "acceptable_departments": ["cardiology", "general"],
+  "acceptable_outcomes": ["booking_confirmed"],
+  "required_info_to_collect": ["symptoms", "duration"],
+  "revelation_probability": 0.6,
+  "vagueness_level": 0.6
+}

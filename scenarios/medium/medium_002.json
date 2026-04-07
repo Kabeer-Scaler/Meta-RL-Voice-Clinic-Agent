@@ -1,0 +1,137 @@
+{
+  "task_id": "medium_002",
+  "task_level": "medium",
+  "max_turns": 20,
+  "description": "Parent booking with slot cancellation - Child with stomach pain and asthma history",
+  
+  "patient_profile": {
+    "patient_id": "P2002",
+    "symptoms": "stomach pain and nausea in child",
+    "symptoms_severity": 0.5,
+    "duration_days": 0,
+    "pain_level": 0.5,
+    "urgency_level": 0.4,
+    "language_mix": 0.1,
+    "vagueness_level": 0.5,
+    "parent_booking": true,
+    "preferences": {
+      "preferred_time": "afternoon",
+      "preferred_department": "pediatrics"
+    },
+    "hidden_facts": {
+      "symptoms": "My son has stomach pain and nausea since this morning",
+      "duration": "Started this morning",
+      "severity": "He's uncomfortable, pain is moderate",
+      "preferred_time": "Afternoon would be best",
+      "department": "pediatrics",
+      "child_age": "8 years old",
+      "other_symptoms": "No fever, no vomiting yet"
+    }
+  },
+  
+  "clinical_history": {
+    "patient_id": "P2002",
+    "has_history": true,
+    "chronic_conditions": ["asthma"],
+    "allergies": ["penicillin"],
+    "prior_visits": [
+      {
+        "date": "2025-12-15",
+        "department": "pediatrics",
+        "reason": "asthma checkup",
+        "doctor": "Dr. Kumar",
+        "outcome": "inhaler prescribed"
+      }
+    ],
+    "prior_escalations": [],
+    "language_preference": "english",
+    "slot_preference_time": "afternoon",
+    "preferred_department": "pediatrics",
+    "active_problems": ["asthma"],
+    "current_medications": ["albuterol inhaler"],
+    "high_risk_flag": false,
+    "frequent_visitor": true
+  },
+  
+  "hidden_facts": {
+    "urgency_score": 0.4,
+    "deterioration_rate": 0.0,
+    "correct_department": "pediatrics",
+    "child_age": 8
+  },
+  
+  "clinic_config": {
+    "departments": ["general", "pediatrics"],
+    "initial_slots": {
+      "general": [
+        {
+          "slot_id": "GEN_2026_04_03_15_00",
+          "datetime": "2026-04-03T15:00:00",
+          "doctor": "Dr. Singh",
+          "department": "general"
+        }
+      ],
+      "pediatrics": [
+        {
+          "slot_id": "PED_2026_04_03_16_00",
+          "datetime": "2026-04-03T16:00:00",
+          "doctor": "Dr. Kumar",
+          "department": "pediatrics"
+        },
+        {
+          "slot_id": "PED_2026_04_04_10_00",
+          "datetime": "2026-04-04T10:00:00",
+          "doctor": "Dr. Sharma",
+          "department": "pediatrics"
+        }
+      ]
+    },
+    "doctor_delays": {}
+  },
+  
+  "initial_clinic_state": {
+    "available_slots": {
+      "general": ["GEN_2026_04_03_15_00"],
+      "pediatrics": ["PED_2026_04_03_16_00", "PED_2026_04_04_10_00"]
+    },
+    "doctor_delay_minutes": 15,
+    "urgent_queue_length": 2
+  },
+  
+  "timed_events": [
+    {
+      "turn": 8,
+      "event_type": "slot_cancelled",
+      "payload": {
+        "department": "pediatrics",
+        "slot_id": "PED_2026_04_03_16_00",
+        "message": "Slot PED_2026_04_03_16_00 has been cancelled"
+      }
+    }
+  ],
+  
+  "ground_truth": {
+    "correct_department": "pediatrics",
+    "urgency_level": 0.4,
+    "slot_preferences": {
+      "time_of_day": "afternoon"
+    },
+    "expected_outcome": "booking_confirmed"
+  },
+  
+  "success_criteria": {
+    "must_identify_caregiver": true,
+    "must_use_history": true,
+    "must_handle_slot_cancellation": true,
+    "min_info_collected": ["symptoms", "child_age", "duration", "preferred_time"],
+    "max_turns_for_perfect": 10,
+    "acceptable_outcomes": ["booking_confirmed"],
+    "forbidden_questions": ["name", "phone", "address", "aadhaar", "insurance_id"]
+  },
+  
+  "acceptable_departments": ["pediatrics"],
+  "acceptable_outcomes": ["booking_confirmed"],
+  "required_info_to_collect": ["symptoms", "child_age", "duration"],
+  "revelation_probability": 0.6,
+  "vagueness_level": 0.5
+}

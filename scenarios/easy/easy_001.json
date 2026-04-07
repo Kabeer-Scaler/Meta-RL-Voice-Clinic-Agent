@@ -1,0 +1,130 @@
+{
+  "task_id": "easy_001",
+  "task_level": "easy",
+  "max_turns": 15,
+  "description": "Routine booking with safe history use - Returning patient needs follow-up for skin issue",
+  
+  "patient_profile": {
+    "patient_id": "P1001",
+    "symptoms": "skin rash follow-up",
+    "symptoms_severity": 0.3,
+    "duration_days": 7,
+    "pain_level": 0.2,
+    "urgency_level": 0.2,
+    "language_mix": 0.0,
+    "vagueness_level": 0.1,
+    "parent_booking": false,
+    "preferences": {
+      "preferred_time": "evening",
+      "preferred_department": "dermatology"
+    },
+    "hidden_facts": {
+      "symptoms": "I need a follow-up for my skin rash. It's much better now.",
+      "duration": "I saw the doctor about a week ago",
+      "severity": "It's mild now, just want to confirm it's healing properly",
+      "preferred_time": "I prefer evening appointments if possible",
+      "department": "dermatology"
+    }
+  },
+  
+  "clinical_history": {
+    "patient_id": "P1001",
+    "has_history": true,
+    "chronic_conditions": [],
+    "allergies": [],
+    "prior_visits": [
+      {
+        "date": "2026-03-25",
+        "department": "dermatology",
+        "reason": "skin rash",
+        "doctor": "Dr. Patel",
+        "outcome": "prescribed topical cream"
+      }
+    ],
+    "prior_escalations": [],
+    "language_preference": "english",
+    "slot_preference_time": "evening",
+    "preferred_department": "dermatology",
+    "active_problems": [],
+    "current_medications": [],
+    "high_risk_flag": false,
+    "frequent_visitor": false
+  },
+  
+  "hidden_facts": {
+    "urgency_score": 0.2,
+    "deterioration_rate": 0.0,
+    "correct_department": "dermatology"
+  },
+  
+  "clinic_config": {
+    "departments": ["general", "dermatology", "pediatrics"],
+    "initial_slots": {
+      "dermatology": [
+        {
+          "slot_id": "DERM_2026_04_03_17_00",
+          "datetime": "2026-04-03T17:00:00",
+          "doctor": "Dr. Patel",
+          "department": "dermatology"
+        },
+        {
+          "slot_id": "DERM_2026_04_03_18_30",
+          "datetime": "2026-04-03T18:30:00",
+          "doctor": "Dr. Patel",
+          "department": "dermatology"
+        },
+        {
+          "slot_id": "DERM_2026_04_04_09_00",
+          "datetime": "2026-04-04T09:00:00",
+          "doctor": "Dr. Sharma",
+          "department": "dermatology"
+        }
+      ],
+      "general": [
+        {
+          "slot_id": "GEN_2026_04_03_10_00",
+          "datetime": "2026-04-03T10:00:00",
+          "doctor": "Dr. Kumar",
+          "department": "general"
+        }
+      ]
+    },
+    "doctor_delays": {}
+  },
+  
+  "initial_clinic_state": {
+    "available_slots": {
+      "dermatology": ["DERM_2026_04_03_17_00", "DERM_2026_04_03_18_30", "DERM_2026_04_04_09_00"],
+      "general": ["GEN_2026_04_03_10_00"]
+    },
+    "doctor_delay_minutes": 0,
+    "urgent_queue_length": 0
+  },
+  
+  "ground_truth": {
+    "correct_department": "dermatology",
+    "urgency_level": 0.2,
+    "slot_preferences": {
+      "time_of_day": "evening",
+      "preferred_doctor": "Dr. Patel"
+    },
+    "expected_outcome": "booking_confirmed"
+  },
+  
+  "success_criteria": {
+    "must_use_history": true,
+    "must_avoid_redundant_questions": true,
+    "must_book_correct_department": true,
+    "min_info_collected": ["symptoms", "preferred_time"],
+    "max_turns_for_perfect": 6,
+    "acceptable_outcomes": ["booking_confirmed"],
+    "forbidden_questions": ["name", "phone", "address", "aadhaar", "insurance_id"]
+  },
+  
+  "timed_events": [],
+  "acceptable_departments": ["dermatology"],
+  "acceptable_outcomes": ["booking_confirmed"],
+  "required_info_to_collect": ["symptoms", "preferred_time"],
+  "revelation_probability": 0.8,
+  "vagueness_level": 0.1
+}

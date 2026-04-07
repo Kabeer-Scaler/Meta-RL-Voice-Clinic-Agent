@@ -1,0 +1,155 @@
+{
+  "task_id": "medium_001",
+  "task_level": "medium",
+  "max_turns": 20,
+  "description": "Caregiver booking with medical history - Parent calling for child with fever and asthma history",
+  
+  "patient_profile": {
+    "patient_id": "P2001",
+    "symptoms": "fever and cough in child",
+    "symptoms_severity": 0.5,
+    "duration_days": 1,
+    "pain_level": 0.3,
+    "urgency_level": 0.5,
+    "language_mix": 0.5,
+    "vagueness_level": 0.4,
+    "parent_booking": true,
+    "preferences": {
+      "preferred_time": "evening",
+      "preferred_department": "pediatrics"
+    },
+    "hidden_facts": {
+      "symptoms": "Mere child ko fever hai since last night, aur cough bhi ho raha hai",
+      "duration": "Since yesterday evening",
+      "severity": "Moderate fever, around 101°F",
+      "preferred_time": "Evening slot chahiye, after school",
+      "department": "pediatrics",
+      "child_age": "8 years old",
+      "breathing": "Breathing is okay, no wheezing right now"
+    }
+  },
+  
+  "clinical_history": {
+    "patient_id": "P2001",
+    "has_history": true,
+    "chronic_conditions": ["mild asthma"],
+    "allergies": [],
+    "prior_visits": [
+      {
+        "date": "2026-02-15",
+        "department": "pediatrics",
+        "reason": "asthma check-up",
+        "doctor": "Dr. Sharma",
+        "outcome": "prescribed inhaler, condition stable"
+      },
+      {
+        "date": "2025-12-10",
+        "department": "pediatrics",
+        "reason": "respiratory infection",
+        "doctor": "Dr. Sharma",
+        "outcome": "treated with antibiotics"
+      }
+    ],
+    "prior_escalations": [],
+    "language_preference": "mixed",
+    "slot_preference_time": "evening",
+    "preferred_department": "pediatrics",
+    "active_problems": ["mild asthma"],
+    "current_medications": ["albuterol inhaler (as needed)"],
+    "high_risk_flag": false,
+    "frequent_visitor": false
+  },
+  
+  "hidden_facts": {
+    "urgency_score": 0.5,
+    "deterioration_rate": 0.0,
+    "correct_department": "pediatrics",
+    "child_age": 8,
+    "has_asthma": true
+  },
+  
+  "clinic_config": {
+    "departments": ["general", "pediatrics", "dermatology"],
+    "initial_slots": {
+      "pediatrics": [
+        {
+          "slot_id": "PED_2026_04_02_09_00",
+          "datetime": "2026-04-02T09:00:00",
+          "doctor": "Dr. Sharma",
+          "department": "pediatrics"
+        },
+        {
+          "slot_id": "PED_2026_04_02_17_00",
+          "datetime": "2026-04-02T17:00:00",
+          "doctor": "Dr. Sharma",
+          "department": "pediatrics"
+        },
+        {
+          "slot_id": "PED_2026_04_03_10_00",
+          "datetime": "2026-04-03T10:00:00",
+          "doctor": "Dr. Patel",
+          "department": "pediatrics"
+        }
+      ],
+      "general": [
+        {
+          "slot_id": "GEN_2026_04_02_11_00",
+          "datetime": "2026-04-02T11:00:00",
+          "doctor": "Dr. Kumar",
+          "department": "general"
+        }
+      ]
+    },
+    "doctor_delays": {}
+  },
+  
+  "initial_clinic_state": {
+    "available_slots": {
+      "pediatrics": ["PED_2026_04_02_09_00", "PED_2026_04_02_17_00", "PED_2026_04_03_10_00"],
+      "general": ["GEN_2026_04_02_11_00"]
+    },
+    "doctor_delay_minutes": 0,
+    "urgent_queue_length": 2
+  },
+  
+  "timed_events": [
+    {
+      "turn": 8,
+      "event_type": "doctor_delay",
+      "payload": {
+        "department": "pediatrics",
+        "delay_minutes": 30,
+        "affected_doctor": "Dr. Sharma",
+        "message": "Dr. Sharma is running 30 minutes late due to an emergency"
+      }
+    }
+  ],
+  
+  "ground_truth": {
+    "correct_department": "pediatrics",
+    "urgency_level": 0.5,
+    "slot_preferences": {
+      "time_of_day": "evening",
+      "preferred_doctor": "Dr. Sharma"
+    },
+    "expected_outcome": "booking_confirmed"
+  },
+  
+  "success_criteria": {
+    "must_identify_caregiver": true,
+    "must_use_history": true,
+    "must_ask_asthma_related_questions": true,
+    "must_handle_language_mixing": true,
+    "must_adapt_to_delay": true,
+    "min_info_collected": ["symptoms", "child_age", "breathing_status", "preferred_time"],
+    "max_turns_for_perfect": 10,
+    "acceptable_outcomes": ["booking_confirmed"],
+    "forbidden_questions": ["name", "phone", "address", "aadhaar", "insurance_id"]
+  },
+  
+  "acceptable_departments": ["pediatrics"],
+  "acceptable_outcomes": ["booking_confirmed"],
+  "required_info_to_collect": ["symptoms", "child_age", "breathing_status", "preferred_time"],
+  "revelation_probability": 0.6,
+  "vagueness_level": 0.4
+}

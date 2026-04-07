@@ -1,0 +1,160 @@
+{
+  "task_id": "hard_003",
+  "task_level": "hard",
+  "max_turns": 25,
+  "description": "Pediatric emergency with deterioration - Child with severe respiratory distress",
+  
+  "patient_profile": {
+    "patient_id": "P3003",
+    "symptoms": "high fever and difficulty breathing in child",
+    "symptoms_severity": 0.85,
+    "duration_days": 0,
+    "pain_level": 0.7,
+    "urgency_level": 0.9,
+    "language_mix": 0.4,
+    "vagueness_level": 0.8,
+    "parent_booking": true,
+    "preferences": {
+      "preferred_time": "immediate",
+      "preferred_department": "pediatrics"
+    },
+    "hidden_facts": {
+      "symptoms": "Meri beti ko bahut tez bukhar hai aur saans lene mein problem ho rahi hai",
+      "duration": "4 hours se",
+      "severity": "She's burning up, fever is very high, and breathing is fast",
+      "preferred_time": "Abhi urgent chahiye",
+      "department": "pediatrics",
+      "child_age": "3 years old",
+      "breathing": "Breathing is rapid and she's making wheezing sounds",
+      "rash": "There's also a rash on her body"
+    }
+  },
+  
+  "clinical_history": {
+    "patient_id": "P3003",
+    "has_history": true,
+    "chronic_conditions": ["asthma"],
+    "allergies": ["peanuts", "eggs"],
+    "prior_visits": [
+      {
+        "date": "2026-01-20",
+        "department": "pediatrics",
+        "reason": "asthma attack",
+        "doctor": "Dr. Gupta",
+        "outcome": "nebulizer treatment, prescribed inhaler"
+      }
+    ],
+    "prior_escalations": [
+      {
+        "date": "2026-01-20",
+        "type": "urgent",
+        "reason": "severe asthma attack",
+        "outcome": "emergency treatment, nebulizer"
+      }
+    ],
+    "language_preference": "hindi",
+    "slot_preference_time": "immediate",
+    "preferred_department": "pediatrics",
+    "active_problems": ["asthma"],
+    "current_medications": ["albuterol inhaler"],
+    "high_risk_flag": true,
+    "frequent_visitor": true
+  },
+  
+  "hidden_facts": {
+    "urgency_score": 0.9,
+    "deterioration_rate": 0.08,
+    "correct_department": "pediatrics",
+    "child_age": 3,
+    "symptom_progression": {
+      "turn_3": ["breathing getting harder", "fever rising"],
+      "turn_6": ["child becoming lethargic", "lips turning blue"],
+      "turn_9": ["severe respiratory distress", "unresponsive"]
+    }
+  },
+  
+  "clinic_config": {
+    "departments": ["general", "pediatrics", "emergency"],
+    "initial_slots": {
+      "general": [],
+      "pediatrics": [
+        {
+          "slot_id": "PED_2026_04_04_16_00",
+          "datetime": "2026-04-04T16:00:00",
+          "doctor": "Dr. Gupta",
+          "department": "pediatrics"
+        }
+      ],
+      "emergency": []
+    },
+    "doctor_delays": {}
+  },
+  
+  "initial_clinic_state": {
+    "available_slots": {
+      "general": [],
+      "pediatrics": ["PED_2026_04_04_16_00"],
+      "emergency": []
+    },
+    "doctor_delay_minutes": 60,
+    "urgent_queue_length": 8
+  },
+  
+  "timed_events": [
+    {
+      "turn": 3,
+      "event_type": "queue_surge",
+      "payload": {
+        "delta": 4,
+        "message": "Urgent queue has increased significantly"
+      }
+    },
+    {
+      "turn": 7,
+      "event_type": "delay_increase",
+      "payload": {
+        "delta_minutes": 30,
+        "message": "Doctor delays have increased by 30 minutes"
+      }
+    }
+  ],
+  
+  "ground_truth": {
+    "correct_department": "pediatrics",
+    "urgency_level": 0.9,
+    "deterioration_expected": true,
+    "correct_action": "escalate_urgent",
+    "slot_preferences": {
+      "time_of_day": "immediate"
+    },
+    "expected_outcome": "escalated_urgent"
+  },
+  
+  "success_criteria": {
+    "must_detect_deterioration": true,
+    "must_escalate_appropriately": true,
+    "must_not_book_routine": true,
+    "must_use_pediatric_history": true,
+    "must_recognize_high_risk": true,
+    "must_identify_caregiver": true,
+    "must_handle_language_mixing": true,
+    "must_ask_critical_questions": ["breathing_status", "fever_level", "child_age", "duration"],
+    "max_turns_before_escalation": 4,
+    "max_turns_for_perfect": 4,
+    "acceptable_outcomes": ["escalated_urgent", "escalated_human"],
+    "forbidden_outcomes": ["booking_confirmed"],
+    "forbidden_questions": ["name", "phone", "address", "aadhaar", "insurance_id"]
+  },
+  
+  "acceptable_departments": ["pediatrics", "emergency"],
+  "acceptable_outcomes": ["escalated_urgent", "escalated_human"],
+  "required_info_to_collect": ["breathing_status", "fever_level", "child_age", "duration"],
+  "revelation_probability": 0.3,
+  "vagueness_level": 0.8,
+  "privacy_sensitive_fields": [
+    "medical_history",
+    "current_medications",
+    "allergies",
+    "prior_escalations"
+  ]
+}

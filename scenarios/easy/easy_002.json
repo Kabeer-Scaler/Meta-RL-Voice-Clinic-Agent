@@ -1,0 +1,123 @@
+{
+  "task_id": "easy_002",
+  "task_level": "easy",
+  "max_turns": 15,
+  "description": "Routine booking - New patient with back pain needs general consultation",
+  
+  "patient_profile": {
+    "patient_id": "P1002",
+    "symptoms": "back pain and stiffness",
+    "symptoms_severity": 0.4,
+    "duration_days": 3,
+    "pain_level": 0.4,
+    "urgency_level": 0.3,
+    "language_mix": 0.0,
+    "vagueness_level": 0.2,
+    "parent_booking": false,
+    "preferences": {
+      "preferred_time": "morning",
+      "preferred_department": "general"
+    },
+    "hidden_facts": {
+      "symptoms": "I have back pain and stiffness",
+      "duration": "It started 3 days ago",
+      "severity": "It's moderate, hurts when I bend",
+      "preferred_time": "Morning works best for me",
+      "department": "general"
+    }
+  },
+  
+  "clinical_history": {
+    "patient_id": "P1002",
+    "has_history": true,
+    "chronic_conditions": [],
+    "allergies": [],
+    "prior_visits": [
+      {
+        "date": "2025-11-10",
+        "department": "general",
+        "reason": "annual checkup",
+        "doctor": "Dr. Singh",
+        "outcome": "healthy"
+      }
+    ],
+    "prior_escalations": [],
+    "language_preference": "english",
+    "slot_preference_time": "morning",
+    "preferred_department": "general",
+    "active_problems": [],
+    "current_medications": [],
+    "high_risk_flag": false,
+    "frequent_visitor": false
+  },
+  
+  "hidden_facts": {
+    "urgency_score": 0.3,
+    "deterioration_rate": 0.0,
+    "correct_department": "general"
+  },
+  
+  "clinic_config": {
+    "departments": ["general", "orthopedics"],
+    "initial_slots": {
+      "general": [
+        {
+          "slot_id": "GEN_2026_04_03_09_00",
+          "datetime": "2026-04-03T09:00:00",
+          "doctor": "Dr. Singh",
+          "department": "general"
+        },
+        {
+          "slot_id": "GEN_2026_04_03_10_30",
+          "datetime": "2026-04-03T10:30:00",
+          "doctor": "Dr. Kumar",
+          "department": "general"
+        }
+      ],
+      "orthopedics": [
+        {
+          "slot_id": "ORTHO_2026_04_04_08_00",
+          "datetime": "2026-04-04T08:00:00",
+          "doctor": "Dr. Mehta",
+          "department": "orthopedics"
+        }
+      ]
+    },
+    "doctor_delays": {}
+  },
+  
+  "initial_clinic_state": {
+    "available_slots": {
+      "general": ["GEN_2026_04_03_09_00", "GEN_2026_04_03_10_30"],
+      "orthopedics": ["ORTHO_2026_04_04_08_00"]
+    },
+    "doctor_delay_minutes": 0,
+    "urgent_queue_length": 0
+  },
+  
+  "ground_truth": {
+    "correct_department": "general",
+    "urgency_level": 0.3,
+    "slot_preferences": {
+      "time_of_day": "morning"
+    },
+    "expected_outcome": "booking_confirmed"
+  },
+  
+  "success_criteria": {
+    "must_use_history": true,
+    "must_avoid_redundant_questions": true,
+    "must_book_correct_department": true,
+    "min_info_collected": ["symptoms", "duration"],
+    "max_turns_for_perfect": 6,
+    "acceptable_outcomes": ["booking_confirmed"],
+    "forbidden_questions": ["name", "phone", "address", "aadhaar", "insurance_id"]
+  },
+  
+  "timed_events": [],
+  "acceptable_departments": ["general", "orthopedics"],
+  "acceptable_outcomes": ["booking_confirmed"],
+  "required_info_to_collect": ["symptoms", "duration"],
+  "revelation_probability": 0.8,
+  "vagueness_level": 0.2
+}

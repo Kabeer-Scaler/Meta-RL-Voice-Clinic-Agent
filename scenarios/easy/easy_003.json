@@ -1,0 +1,112 @@
+{
+  "task_id": "easy_003",
+  "task_level": "easy",
+  "max_turns": 15,
+  "description": "Routine booking - New patient with cold symptoms",
+  
+  "patient_profile": {
+    "patient_id": "P1003",
+    "symptoms": "cough and sore throat",
+    "symptoms_severity": 0.3,
+    "duration_days": 2,
+    "pain_level": 0.3,
+    "urgency_level": 0.2,
+    "language_mix": 0.0,
+    "vagueness_level": 0.1,
+    "parent_booking": false,
+    "preferences": {
+      "preferred_time": "afternoon",
+      "preferred_department": "general"
+    },
+    "hidden_facts": {
+      "symptoms": "I have a cough and sore throat",
+      "duration": "Started 2 days ago",
+      "severity": "It's mild, just want to get it checked",
+      "preferred_time": "Afternoon would be good",
+      "department": "general"
+    }
+  },
+  
+  "clinical_history": {
+    "patient_id": "P1003",
+    "has_history": false,
+    "chronic_conditions": [],
+    "allergies": [],
+    "prior_visits": [],
+    "prior_escalations": [],
+    "language_preference": "english",
+    "slot_preference_time": "afternoon",
+    "preferred_department": "general",
+    "active_problems": [],
+    "current_medications": [],
+    "high_risk_flag": false,
+    "frequent_visitor": false
+  },
+  
+  "hidden_facts": {
+    "urgency_score": 0.2,
+    "deterioration_rate": 0.0,
+    "correct_department": "general"
+  },
+  
+  "clinic_config": {
+    "departments": ["general"],
+    "initial_slots": {
+      "general": [
+        {
+          "slot_id": "GEN_2026_04_03_14_00",
+          "datetime": "2026-04-03T14:00:00",
+          "doctor": "Dr. Kumar",
+          "department": "general"
+        },
+        {
+          "slot_id": "GEN_2026_04_03_15_30",
+          "datetime": "2026-04-03T15:30:00",
+          "doctor": "Dr. Singh",
+          "department": "general"
+        },
+        {
+          "slot_id": "GEN_2026_04_04_14_00",
+          "datetime": "2026-04-04T14:00:00",
+          "doctor": "Dr. Kumar",
+          "department": "general"
+        }
+      ]
+    },
+    "doctor_delays": {}
+  },
+  
+  "initial_clinic_state": {
+    "available_slots": {
+      "general": ["GEN_2026_04_03_14_00", "GEN_2026_04_03_15_30", "GEN_2026_04_04_14_00"]
+    },
+    "doctor_delay_minutes": 0,
+    "urgent_queue_length": 0
+  },
+  
+  "ground_truth": {
+    "correct_department": "general",
+    "urgency_level": 0.2,
+    "slot_preferences": {
+      "time_of_day": "afternoon"
+    },
+    "expected_outcome": "booking_confirmed"
+  },
+  
+  "success_criteria": {
+    "must_use_history": false,
+    "must_avoid_redundant_questions": true,
+    "must_book_correct_department": true,
+    "min_info_collected": ["symptoms", "duration"],
+    "max_turns_for_perfect": 6,
+    "acceptable_outcomes": ["booking_confirmed"],
+    "forbidden_questions": ["name", "phone", "address", "aadhaar", "insurance_id"]
+  },
+  
+  "timed_events": [],
+  "acceptable_departments": ["general"],
+  "acceptable_outcomes": ["booking_confirmed"],
+  "required_info_to_collect": ["symptoms", "duration"],
+  "revelation_probability": 0.9,
+  "vagueness_level": 0.1
+}

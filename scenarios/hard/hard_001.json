@@ -1,0 +1,178 @@
+{
+  "task_id": "hard_001",
+  "task_level": "hard",
+  "max_turns": 25,
+  "description": "Deterioration detection - Elderly patient with cardiac history and worsening symptoms (SHOWCASE TASK)",
+  
+  "patient_profile": {
+    "patient_id": "P3001",
+    "symptoms": "chest tightness and sweating",
+    "symptoms_severity": 0.7,
+    "duration_days": 1,
+    "pain_level": 0.7,
+    "urgency_level": 0.75,
+    "language_mix": 0.3,
+    "vagueness_level": 0.5,
+    "parent_booking": false,
+    "preferences": {
+      "preferred_time": "morning",
+      "preferred_department": "cardiology"
+    },
+    "hidden_facts": {
+      "symptoms": "My father has chest tightness and sweating. Started this morning.",
+      "duration": "Since this morning, around 6 AM",
+      "severity": "He says it's uncomfortable but not severe pain",
+      "preferred_time": "Can we book for tomorrow morning?",
+      "department": "cardiology",
+      "patient_age": "67 years old",
+      "additional_symptoms": "He's also feeling a bit dizzy"
+    }
+  },
+  
+  "clinical_history": {
+    "patient_id": "P3001",
+    "has_history": true,
+    "chronic_conditions": ["heart failure", "hypertension", "type 2 diabetes"],
+    "allergies": ["penicillin"],
+    "prior_visits": [
+      {
+        "date": "2026-02-20",
+        "department": "cardiology",
+        "reason": "chest pain",
+        "doctor": "Dr. Mehta",
+        "outcome": "EKG normal, medication adjusted"
+      },
+      {
+        "date": "2026-01-10",
+        "department": "cardiology",
+        "reason": "routine follow-up",
+        "doctor": "Dr. Mehta",
+        "outcome": "stable, continue medications"
+      }
+    ],
+    "prior_escalations": [
+      {
+        "date": "2025-11-15",
+        "type": "urgent",
+        "reason": "acute chest pain",
+        "outcome": "admitted for observation, discharged after 2 days"
+      }
+    ],
+    "language_preference": "english",
+    "slot_preference_time": "morning",
+    "preferred_department": "cardiology",
+    "active_problems": ["uncontrolled hypertension", "heart failure (stable)", "T2DM"],
+    "current_medications": ["metformin", "lisinopril", "carvedilol", "aspirin"],
+    "high_risk_flag": true,
+    "frequent_visitor": true
+  },
+  
+  "hidden_facts": {
+    "urgency_score": 0.75,
+    "deterioration_rate": 0.03,
+    "correct_department": "cardiology",
+    "patient_age": 67,
+    "symptom_progression": {
+      "turn_5": ["increased sweating", "pale appearance"],
+      "turn_8": ["shortness of breath", "nausea"],
+      "turn_12": ["difficulty breathing", "confusion"]
+    }
+  },
+  
+  "clinic_config": {
+    "departments": ["general", "cardiology", "emergency"],
+    "initial_slots": {
+      "cardiology": [
+        {
+          "slot_id": "CARD_2026_04_02_09_00",
+          "datetime": "2026-04-02T09:00:00",
+          "doctor": "Dr. Mehta",
+          "department": "cardiology"
+        },
+        {
+          "slot_id": "CARD_2026_04_03_10_00",
+          "datetime": "2026-04-03T10:00:00",
+          "doctor": "Dr. Singh",
+          "department": "cardiology"
+        }
+      ],
+      "general": [
+        {
+          "slot_id": "GEN_2026_04_02_11_00",
+          "datetime": "2026-04-02T11:00:00",
+          "doctor": "Dr. Kumar",
+          "department": "general"
+        }
+      ],
+      "emergency": [
+        {
+          "slot_id": "EMER_2026_04_01_NOW",
+          "datetime": "2026-04-01T14:30:00",
+          "doctor": "Dr. Reddy",
+          "department": "emergency"
+        }
+      ]
+    },
+    "doctor_delays": {}
+  },
+  
+  "initial_clinic_state": {
+    "available_slots": {
+      "cardiology": ["CARD_2026_04_02_09_00", "CARD_2026_04_03_10_00"],
+      "general": ["GEN_2026_04_02_11_00"],
+      "emergency": ["EMER_2026_04_01_NOW"]
+    },
+    "doctor_delay_minutes": 0,
+    "urgent_queue_length": 3
+  },
+  
+  "timed_events": [
+    {
+      "turn": 10,
+      "event_type": "urgent_consume_slot",
+      "payload": {
+        "slot_id": "CARD_2026_04_02_09_00",
+        "reason": "Emergency patient took the cardiology slot",
+        "message": "The morning cardiology slot is no longer available due to an emergency case"
+      }
+    }
+  ],
+  
+  "ground_truth": {
+    "correct_department": "cardiology",
+    "urgency_level": 0.75,
+    "deterioration_expected": true,
+    "correct_action": "escalate_urgent",
+    "slot_preferences": {
+      "time_of_day": "immediate",
+      "preferred_doctor": "Dr. Mehta"
+    },
+    "expected_outcome": "escalated_urgent"
+  },
+  
+  "success_criteria": {
+    "must_detect_deterioration": true,
+    "must_escalate_appropriately": true,
+    "must_not_book_routine": true,
+    "must_use_cardiac_history": true,
+    "must_recognize_high_risk": true,
+    "must_ask_critical_questions": ["current_symptoms", "breathing", "pain_level", "duration"],
+    "max_turns_before_escalation": 8,
+    "max_turns_for_perfect": 8,
+    "acceptable_outcomes": ["escalated_urgent", "escalated_human"],
+    "forbidden_outcomes": ["booking_confirmed"],
+    "forbidden_questions": ["name", "phone", "address", "aadhaar", "insurance_id"]
+  },
+  
+  "acceptable_departments": ["cardiology", "emergency"],
+  "acceptable_outcomes": ["escalated_urgent", "escalated_human"],
+  "required_info_to_collect": ["current_symptoms", "breathing", "pain_level", "duration", "patient_age"],
+  "revelation_probability": 0.4,
+  "vagueness_level": 0.5,
+  "privacy_sensitive_fields": [
+    "medical_history",
+    "current_medications",
+    "allergies",
+    "prior_escalations"
+  ]
+}

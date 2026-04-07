@@ -1,0 +1,155 @@
+{
+  "task_id": "hard_002",
+  "task_level": "hard",
+  "max_turns": 25,
+  "description": "Severe migraine with deterioration - High-risk patient with neurological symptoms",
+  
+  "patient_profile": {
+    "patient_id": "P3002",
+    "symptoms": "severe headache with vision problems",
+    "symptoms_severity": 0.8,
+    "duration_days": 0,
+    "pain_level": 0.8,
+    "urgency_level": 0.85,
+    "language_mix": 0.2,
+    "vagueness_level": 0.7,
+    "parent_booking": false,
+    "preferences": {
+      "preferred_time": "immediate",
+      "preferred_department": "neurology"
+    },
+    "hidden_facts": {
+      "symptoms": "I have a very bad headache and my vision is blurry",
+      "duration": "Started about 2 hours ago",
+      "severity": "The pain is really severe, worse than my usual migraines",
+      "preferred_time": "I need to see someone now",
+      "department": "neurology",
+      "vision_problems": "Everything looks blurry and I'm seeing spots",
+      "nausea": "I feel very nauseous"
+    }
+  },
+  
+  "clinical_history": {
+    "patient_id": "P3002",
+    "has_history": true,
+    "chronic_conditions": ["hypertension", "chronic migraine"],
+    "allergies": ["aspirin"],
+    "prior_visits": [
+      {
+        "date": "2025-10-20",
+        "department": "neurology",
+        "reason": "migraine management",
+        "doctor": "Dr. Reddy",
+        "outcome": "prescribed sumatriptan"
+      }
+    ],
+    "prior_escalations": [
+      {
+        "date": "2024-08-15",
+        "type": "emergency",
+        "reason": "severe migraine with aura",
+        "outcome": "emergency visit, IV treatment"
+      }
+    ],
+    "language_preference": "english",
+    "slot_preference_time": "immediate",
+    "preferred_department": "neurology",
+    "active_problems": ["hypertension", "chronic migraine"],
+    "current_medications": ["sumatriptan", "amlodipine"],
+    "high_risk_flag": true,
+    "frequent_visitor": true
+  },
+  
+  "hidden_facts": {
+    "urgency_score": 0.85,
+    "deterioration_rate": 0.05,
+    "correct_department": "neurology",
+    "symptom_progression": {
+      "turn_5": ["headache intensifying", "vision getting worse"],
+      "turn_8": ["severe nausea", "difficulty speaking"],
+      "turn_12": ["confusion", "weakness on one side"]
+    }
+  },
+  
+  "clinic_config": {
+    "departments": ["general", "neurology", "emergency"],
+    "initial_slots": {
+      "general": [
+        {
+          "slot_id": "GEN_2026_04_05_14_00",
+          "datetime": "2026-04-05T14:00:00",
+          "doctor": "Dr. Kumar",
+          "department": "general"
+        }
+      ],
+      "neurology": [
+        {
+          "slot_id": "NEURO_2026_04_06_09_00",
+          "datetime": "2026-04-06T09:00:00",
+          "doctor": "Dr. Reddy",
+          "department": "neurology"
+        }
+      ],
+      "emergency": []
+    },
+    "doctor_delays": {}
+  },
+  
+  "initial_clinic_state": {
+    "available_slots": {
+      "general": ["GEN_2026_04_05_14_00"],
+      "neurology": ["NEURO_2026_04_06_09_00"],
+      "emergency": []
+    },
+    "doctor_delay_minutes": 45,
+    "urgent_queue_length": 5
+  },
+  
+  "timed_events": [
+    {
+      "turn": 5,
+      "event_type": "queue_surge",
+      "payload": {
+        "delta": 3,
+        "message": "Urgent queue has increased by 3 patients"
+      }
+    }
+  ],
+  
+  "ground_truth": {
+    "correct_department": "neurology",
+    "urgency_level": 0.85,
+    "deterioration_expected": true,
+    "correct_action": "escalate_urgent",
+    "slot_preferences": {
+      "time_of_day": "immediate"
+    },
+    "expected_outcome": "escalated_urgent"
+  },
+  
+  "success_criteria": {
+    "must_detect_deterioration": true,
+    "must_escalate_appropriately": true,
+    "must_not_book_routine": true,
+    "must_use_neurological_history": true,
+    "must_recognize_high_risk": true,
+    "must_ask_critical_questions": ["vision_problems", "pain_severity", "duration", "other_symptoms"],
+    "max_turns_before_escalation": 5,
+    "max_turns_for_perfect": 5,
+    "acceptable_outcomes": ["escalated_urgent", "escalated_human"],
+    "forbidden_outcomes": ["booking_confirmed"],
+    "forbidden_questions": ["name", "phone", "address", "aadhaar", "insurance_id"]
+  },
+  
+  "acceptable_departments": ["neurology", "emergency"],
+  "acceptable_outcomes": ["escalated_urgent", "escalated_human"],
+  "required_info_to_collect": ["vision_problems", "pain_severity", "duration"],
+  "revelation_probability": 0.4,
+  "vagueness_level": 0.7,
+  "privacy_sensitive_fields": [
+    "medical_history",
+    "current_medications",
+    "allergies",
+    "prior_escalations"
+  ]
+}

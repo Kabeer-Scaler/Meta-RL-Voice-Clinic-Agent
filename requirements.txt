@@ -1,0 +1,16 @@
+openenv-core>=0.1.0
+openai==1.6.1
+python-dotenv==1.0.0
+pyyaml==6.0.1
+numpy==1.26.2
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+requests==2.31.0
+stable-baselines3==2.2.1
+gymnasium==0.29.1
+tensorboard>=2.14.0
+fastapi>=0.104.0
+uvicorn>=0.24.0
+websockets>=12.0
+streamlit>=1.28.0
