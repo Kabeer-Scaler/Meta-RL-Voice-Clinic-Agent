@@ -36,7 +36,9 @@ from src.voiceclinicagent.api_models import VoiceClinicAction
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
-HF_TOKEN = os.getenv("HF_TOKEN", "")
+# Validator provides API_KEY, but we also support HF_TOKEN for backward compatibility
+API_KEY = os.getenv("API_KEY", os.getenv("HF_TOKEN", ""))
+HF_TOKEN = API_KEY  # Alias for backward compatibility
 BENCHMARK = "voice-clinic-agent"
 
 
@@ -373,10 +375,10 @@ def run_episode(task_id: str, env_base: str, api_base: str, model_name: str, age
     """
     # Create agent based on type
     if agent_type == "llm":
-        if not HF_TOKEN:
-            print("[ERROR] HF_TOKEN not set, cannot use LLM agent", file=sys.stderr)
+        if not API_KEY:
+            print("[ERROR] API_KEY not set, cannot use LLM agent", file=sys.stderr)
             return 0.0
-        agent = LLMAgent(api_key=HF_TOKEN, model=model_name, base_url=api_base)
+        agent = LLMAgent(api_key=API_KEY, model=model_name, base_url=api_base)
     else:
         agent = RuleBasedAgent()
     
@@ -579,9 +581,9 @@ def main():
     parser.add_argument(
         "--agent",
         type=str,
-        default="rule-based",
+        default="llm",
         choices=["rule-based", "llm"],
-        help="Agent type to use (default: rule-based)"
+        help="Agent type to use (default: llm)"
     )
     parser.add_argument(
         "--tasks",
@@ -595,9 +597,9 @@ def main():
     # Determine agent type and model name
     agent_type = args.agent
     if agent_type == "llm":
-        if not HF_TOKEN:
-            print("[ERROR] HF_TOKEN environment variable not set. Cannot use LLM agent.", file=sys.stderr)
-            print("[ERROR] Please set HF_TOKEN to your OpenAI API key or Hugging Face token.", file=sys.stderr)
+        if not API_KEY:
+            print("[ERROR] API_KEY environment variable not set. Cannot use LLM agent.", file=sys.stderr)
+            print("[ERROR] Please set API_KEY to your OpenAI API key or Hugging Face token.", file=sys.stderr)
             sys.exit(1)
         model_display = MODEL_NAME
     else:
