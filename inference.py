@@ -13,13 +13,21 @@ import sys
 import json
 from typing import List, Optional
 from openai import OpenAI
+import requests
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
 load_dotenv()
 
-# Import the OpenEnv client
-from src.voiceclinicagent.client import VoiceClinicEnv
+# Import the OpenEnv client - handle case where it's not available
+try:
+    from src.voiceclinicagent.client import VoiceClinicEnv
+    CLIENT_AVAILABLE = VoiceClinicEnv is not None
+except (ImportError, TypeError):
+    # If EnvClient is not available, use requests directly
+    VoiceClinicEnv = None
+    CLIENT_AVAILABLE = False
+
 from src.voiceclinicagent.api_models import VoiceClinicAction
 
 
@@ -381,35 +389,128 @@ def run_episode(task_id: str, env_base: str, api_base: str, model_name: str, age
     log_start(task=task_id, env=BENCHMARK, model=model_name)
     
     try:
-        # Create OpenEnv client (connects to local environment server)
-        with VoiceClinicEnv(base_url=env_base).sync() as env:
+        if CLIENT_AVAILABLE:
+            # Use OpenEnv client (connects to local environment server)
+            with VoiceClinicEnv(base_url=env_base).sync() as env:
+                # Reset environment
+                result = env.reset(task_id=task_id, seed=42)
+                observation = result.observation
+                
+                # Episode loop
+                done = observation.done
+                max_turns = observation.max_turns
+                
+                while not done and steps_taken < max_turns:
+                    steps_taken += 1
+                    
+                    # Select action
+                    action = agent.select_action(observation)
+                    
+                    # Format action string for logging
+                    action_str = f"{action.action_type}"
+                    if action.payload:
+                        # Truncate payload for logging
+                        payload_str = str(action.payload)[:50]
+                        action_str = f"{action.action_type}({payload_str})"
+                    
+                    # Execute step
+                    try:
+                        result = env.step(action)
+                        observation = result.observation
+                        done = observation.done
+                        reward = observation.reward if observation.reward is not None else 0.0
+                        error = None
+                        
+                        rewards.append(reward)
+                        
+                        # Emit [STEP] log
+                        log_step(
+                            step=steps_taken,
+                            action=action_str,
+                            reward=reward,
+                            done=done,
+                            error=error
+                        )
+                        
+                    except Exception as e:
+                        error = str(e)
+                        reward = 0.0
+                        rewards.append(reward)
+                        
+                        # Emit [STEP] log with error
+                        log_step(
+                            step=steps_taken,
+                            action=action_str,
+                            reward=reward,
+                            done=True,
+                            error=error
+                        )
+                        break
+                
+                # Get final state
+                try:
+                    state = env.state()
+                    score = state.final_score if state.final_score is not None else 0.0
+                    # Clamp score to [0.0, 1.0]
+                    score = min(max(score, 0.0), 1.0)
+                    success = score >= 0.1  # Success threshold
+                except Exception:
+                    score = 0.0
+                    success = False
+        else:
+            # Fallback: Use requests directly
             # Reset environment
-            result = env.reset(task_id=task_id, seed=42)
-            observation = result.observation
+            response = requests.post(
+                f"{env_base}/reset",
+                json={"task_id": task_id, "seed": 42},
+                timeout=30
+            )
+            response.raise_for_status()
+            data = response.json()
+            observation = data.get("observation", {})
+            
+            done = observation.get("done", False)
+            max_turns = observation.get("max_turns", 20)
             
             # Episode loop
-            done = observation.done
-            max_turns = observation.max_turns
-            
             while not done and steps_taken < max_turns:
                 steps_taken += 1
                 
-                # Select action
-                action = agent.select_action(observation)
+                # Select action (create a simple dict-based observation)
+                class SimpleObs:
+                    def __init__(self, obs_dict):
+                        self.done = obs_dict.get("done", False)
+                        self.reward = obs_dict.get("reward")
+                        self.turn_idx = obs_dict.get("turn_idx", 0)
+                        self.max_turns = obs_dict.get("max_turns", 20)
+                        self.patient_message = obs_dict.get("patient_message", "")
+                        self.conversation_summary = obs_dict.get("conversation_summary", "")
+                        self.patient_flags = obs_dict.get("patient_flags", {})
+                        self.clinic_state = obs_dict.get("clinic_state", {})
+                        self.reflection_token = obs_dict.get("reflection_token", [0.0, 0.0, 0.0, 0.0])
+                        self.clinical_history = type('obj', (object,), obs_dict.get("clinical_history", {}))()
+                
+                obs_obj = SimpleObs(observation)
+                action = agent.select_action(obs_obj)
                 
                 # Format action string for logging
                 action_str = f"{action.action_type}"
                 if action.payload:
-                    # Truncate payload for logging
                     payload_str = str(action.payload)[:50]
                     action_str = f"{action.action_type}({payload_str})"
                 
                 # Execute step
                 try:
-                    result = env.step(action)
-                    observation = result.observation
-                    done = observation.done
-                    reward = observation.reward if observation.reward is not None else 0.0
+                    response = requests.post(
+                        f"{env_base}/step",
+                        json={"action_type": action.action_type, "payload": action.payload},
+                        timeout=30
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    observation = data.get("observation", {})
+                    done = observation.get("done", False)
+                    reward = observation.get("reward", 0.0) if observation.get("reward") is not None else 0.0
                     error = None
                     
                     rewards.append(reward)
@@ -440,11 +541,17 @@ def run_episode(task_id: str, env_base: str, api_base: str, model_name: str, age
             
             # Get final state
             try:
-                state = env.state()
-                score = state.final_score if state.final_score is not None else 0.0
+                # Extract episode_id from first reset if available
+                episode_id = data.get("episode_id", "unknown")
+                response = requests.get(f"{env_base}/state/{episode_id}", timeout=30)
+                response.raise_for_status()
+                state_data = response.json()
+                score = state_data.get("final_score", 0.0)
+                if score is None:
+                    score = 0.0
                 # Clamp score to [0.0, 1.0]
                 score = min(max(score, 0.0), 1.0)
-                success = score >= 0.1  # Success threshold
+                success = score >= 0.1
             except Exception:
                 score = 0.0
                 success = False
