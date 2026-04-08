@@ -17,6 +17,7 @@ COPY src/ ./src/
 COPY app.py .
 COPY scenarios/ ./scenarios/
 COPY openenv.yaml .
+COPY static/ ./static/
 
 # Expose port 7860 (Hugging Face Spaces standard)
 EXPOSE 7860

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceClinicAgent API</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0f1419;
+            color: #e8eaed;
+        }
+        h1 { color: #ff9d00; }
+        h2 { color: #58a6ff; margin-top: 30px; }
+        .endpoint {
+            background: #1c2128;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border-left: 3px solid #58a6ff;
+        }
+        .method {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .get { background: #238636; }
+        .post { background: #1f6feb; }
+        code {
+            background: #161b22;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #ff7b72;
+        }
+        a { color: #58a6ff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>🏥 VoiceClinicAgent API</h1>
+    <p>OpenEnv-compatible RL environment for clinic appointment booking agents</p>
+    
+    <h2>📚 API Documentation</h2>
+    <p>Interactive API documentation: <a href="/docs" target="_blank">/docs</a></p>
+    
+    <h2>🔗 Available Endpoints</h2>
+    
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <code>/health</code>
+        <p>Health check endpoint</p>
+    </div>
+    
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <code>/reset</code>
+        <p>Initialize a new episode with a task_id (easy_001, medium_001, hard_001)</p>
+    </div>
+    
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <code>/step</code>
+        <p>Execute one environment step with an action</p>
+    </div>
+    
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <code>/state/{episode_id}</code>
+        <p>Get current episode state including final score when complete</p>
+    </div>
+    
+    <h2>🎯 Available Tasks</h2>
+    <ul>
+        <li><code>easy_001</code> - Adult patient, clear symptoms, straightforward booking (15 turns)</li>
+        <li><code>medium_001</code> - Parent booking for child, mild vagueness (20 turns)</li>
+        <li><code>hard_001</code> - Limited slots, urgent cases, mixed language (25 turns)</li>
+    </ul>
+    
+    <h2>📖 Quick Start</h2>
+    <p>Example: Start a new episode</p>
+    <pre style="background: #161b22; padding: 15px; border-radius: 6px; overflow-x: auto;">
+curl -X POST "https://huggingface.co/spaces/Kabs-123/voice-clinic-agent/reset" \
+  -H "Content-Type: application/json" \
+  -d '{"task_id": "easy_001", "seed": 42}'
+    </pre>
+    
+    <p style="margin-top: 40px; text-align: center; color: #8b949e;">
+        <a href="https://github.com/Kabs-123/voice-clinic-agent" target="_blank">GitHub</a> | 
+        <a href="/docs" target="_blank">API Docs</a>
+    </p>
+</body>
+</html>
