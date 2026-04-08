@@ -582,7 +582,16 @@ def main():
     ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
     API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
     MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4.1-mini")
-    API_KEY = os.getenv("API_KEY")  # No default - None if not provided
+    
+    # Support both HF_TOKEN (official requirement) and API_KEY (validator provides)
+    HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
+    
+    # Official hackathon requirement: raise ValueError if HF_TOKEN is None
+    if HF_TOKEN is None:
+        raise ValueError("HF_TOKEN or API_KEY environment variable is required")
+    
+    # Use HF_TOKEN as API_KEY for backward compatibility
+    API_KEY = HF_TOKEN
     
     # Ensure stdout is unbuffered for immediate output
     sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure') else None
