@@ -45,6 +45,15 @@
     <h1>🏥 VoiceClinicAgent API</h1>
     <p>OpenEnv-compatible RL environment for clinic appointment booking agents</p>
     
+    <h2>⚙️ Configuration Required</h2>
+    <p><strong>Note:</strong> This Space requires environment variables to be configured in the Space settings:</p>
+    <ul>
+        <li><code>API_BASE_URL</code> - OpenAI API base URL (e.g., https://api.openai.com/v1)</li>
+        <li><code>MODEL_NAME</code> - Model name (e.g., gpt-3.5-turbo)</li>
+        <li><code>HF_TOKEN</code> - Hugging Face token or OpenAI API key</li>
+    </ul>
+    <p>Without these variables, the <code>/reset</code> endpoint will return an error.</p>
+    
     <h2>📚 API Documentation</h2>
     <p>Interactive API documentation: <a href="/docs" target="_blank">/docs</a></p>
     
