@@ -15,9 +15,11 @@ from typing import List, Optional
 from openai import OpenAI
 import requests
 
-# Load environment variables from .env file
+# Load environment variables from .env file (only for local development)
+# In production (Docker/HF Spaces), environment variables are injected directly
 from dotenv import load_dotenv
-load_dotenv()
+if os.path.exists('.env'):
+    load_dotenv()  # Only load if .env file exists (local development)
 
 # Import the OpenEnv client - handle case where it's not available
 try:
@@ -155,6 +157,7 @@ Choose the best action now:"""
             prompt = self._build_prompt(observation)
             
             # Call LLM
+            print(f"[DEBUG] Making LLM API call to {self.client.base_url}", file=sys.stderr, flush=True)
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -164,6 +167,7 @@ Choose the best action now:"""
                 temperature=0.3,
                 max_tokens=200
             )
+            print(f"[DEBUG] LLM API call successful", file=sys.stderr, flush=True)
             
             # Parse response
             import json
@@ -379,7 +383,9 @@ def run_episode(task_id: str, env_base: str, api_base: str, model_name: str, age
             print("[WARNING] API_KEY not set, using rule-based agent instead", file=sys.stderr)
             agent = RuleBasedAgent()
         else:
+            print(f"[DEBUG] Creating LLMAgent with base_url={api_base}, model={model_name}", file=sys.stderr, flush=True)
             agent = LLMAgent(api_key=API_KEY, model=model_name, base_url=api_base)
+            print(f"[DEBUG] LLMAgent created successfully", file=sys.stderr, flush=True)
     else:
         agent = RuleBasedAgent()
     
@@ -583,6 +589,12 @@ def main():
     # Test that stdout logging works immediately
     print("[TEST] Structured logging initialized", flush=True)
     
+    # Debug: Log environment variable detection (to stderr, not stdout)
+    print(f"[DEBUG] API_KEY present: {bool(API_KEY)}", file=sys.stderr, flush=True)
+    print(f"[DEBUG] API_BASE_URL: {API_BASE_URL}", file=sys.stderr, flush=True)
+    print(f"[DEBUG] MODEL_NAME: {MODEL_NAME}", file=sys.stderr, flush=True)
+    print(f"[DEBUG] ENV_BASE_URL: {ENV_BASE_URL}", file=sys.stderr, flush=True)
+    
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="VoiceClinicAgent Inference")
     parser.add_argument(
@@ -608,6 +620,8 @@ def main():
     else:
         # Auto-detect based on API_KEY availability
         agent_type = "llm" if API_KEY else "rule-based"
+    
+    print(f"[DEBUG] Auto-detected agent type: {agent_type}", file=sys.stderr, flush=True)
     
     # If LLM agent requested but no API_KEY, fall back to rule-based
     if agent_type == "llm" and not API_KEY:

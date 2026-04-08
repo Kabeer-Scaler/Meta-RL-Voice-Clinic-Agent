@@ -15,6 +15,7 @@ RUN python -c "from openenv_core.env_server import create_fastapi_app"
 # Copy application code
 COPY src/ ./src/
 COPY app.py .
+COPY inference.py .
 COPY scenarios/ ./scenarios/
 COPY openenv.yaml .
 COPY static/ ./static/
