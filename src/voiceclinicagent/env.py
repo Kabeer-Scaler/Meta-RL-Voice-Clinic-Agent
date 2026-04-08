@@ -96,13 +96,14 @@ class VoiceClinicEnvironment(Environment):  # Remove generic subscripting
         # Create seeded RNG
         self._episode_rng = make_episode_rng(seed)
         
-        # Initialize state
+        # Initialize state - only pass base State fields to constructor
         self._state = VoiceClinicState(
             episode_id=generate_episode_id(),
             step_count=0,
-            task_id=task_id,
-            max_turns=self._scenario.max_turns,
         )
+        # Set additional fields after instantiation
+        self._state.task_id = task_id
+        self._state.max_turns = self._scenario.max_turns
         
         # Initialize patient simulator
         self.patient_simulator.initialize(self._scenario, self._episode_rng)
