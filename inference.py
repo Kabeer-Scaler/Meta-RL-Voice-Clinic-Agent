@@ -376,9 +376,10 @@ def run_episode(task_id: str, env_base: str, api_base: str, model_name: str, age
     # Create agent based on type
     if agent_type == "llm":
         if not API_KEY:
-            print("[ERROR] API_KEY not set, cannot use LLM agent", file=sys.stderr)
-            return 0.0
-        agent = LLMAgent(api_key=API_KEY, model=model_name, base_url=api_base)
+            print("[WARNING] API_KEY not set, using rule-based agent instead", file=sys.stderr)
+            agent = RuleBasedAgent()
+        else:
+            agent = LLMAgent(api_key=API_KEY, model=model_name, base_url=api_base)
     else:
         agent = RuleBasedAgent()
     
@@ -596,11 +597,13 @@ def main():
     
     # Determine agent type and model name
     agent_type = args.agent
+    
+    # If LLM agent requested but no API_KEY, fall back to rule-based
+    if agent_type == "llm" and not API_KEY:
+        print("[WARNING] API_KEY not set, falling back to rule-based agent", file=sys.stderr)
+        agent_type = "rule-based"
+    
     if agent_type == "llm":
-        if not API_KEY:
-            print("[ERROR] API_KEY environment variable not set. Cannot use LLM agent.", file=sys.stderr)
-            print("[ERROR] Please set API_KEY to your OpenAI API key or Hugging Face token.", file=sys.stderr)
-            sys.exit(1)
         model_display = MODEL_NAME
     else:
         model_display = "rule-based-agent"
