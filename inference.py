@@ -581,15 +581,15 @@ def main():
     # This ensures they're read AFTER the validator injects them
     ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
     API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
-    MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
+    MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4.1-mini")
     # Validator provides API_KEY, but we also support HF_TOKEN for backward compatibility
     API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN") or ""
     
     # Ensure stdout is unbuffered for immediate output
     sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure') else None
     
-    # Test that stdout logging works immediately
-    print("[TEST] Structured logging initialized", flush=True)
+    # Test that stdout logging works immediately (send to stderr to avoid interfering with structured logs)
+    print("[TEST] Structured logging initialized", file=sys.stderr, flush=True)
     
     # Debug: Log environment variable detection (to stderr, not stdout)
     print(f"[DEBUG] API_KEY present: {bool(API_KEY and API_KEY.strip())}", file=sys.stderr, flush=True)
