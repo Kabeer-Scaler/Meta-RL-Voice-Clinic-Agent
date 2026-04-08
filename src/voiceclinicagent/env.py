@@ -1,9 +1,15 @@
 """VoiceClinicEnvironment following OpenEnv pattern."""
 
 from __future__ import annotations
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, TYPE_CHECKING
 from .openenv_compat import Environment
-from .api_models import VoiceClinicAction, VoiceClinicObservation, VoiceClinicState
+
+if TYPE_CHECKING:
+    from .api_models import VoiceClinicAction, VoiceClinicObservation, VoiceClinicState
+else:
+    # Import for runtime use
+    from .api_models import VoiceClinicAction, VoiceClinicObservation, VoiceClinicState
+
 from .scenario_loader import ScenarioLoader
 from .user_simulator import SyntheticPatientSimulator
 from .transcript import TranscriptBuilder
@@ -19,7 +25,7 @@ from .utils.seeding import make_episode_rng
 from .utils.ids import generate_episode_id
 
 
-class VoiceClinicEnvironment(Environment[VoiceClinicAction, VoiceClinicObservation, VoiceClinicState]):
+class VoiceClinicEnvironment(Environment):  # Remove generic subscripting
     """
     OpenEnv-compatible environment for clinic appointment booking.
     
