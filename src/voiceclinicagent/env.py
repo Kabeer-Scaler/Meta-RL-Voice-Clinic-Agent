@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from typing import Optional, Dict, Any
-from openenv.core.env_server import Environment
+from .openenv_compat import Environment
 from .api_models import VoiceClinicAction, VoiceClinicObservation, VoiceClinicState
 from .scenario_loader import ScenarioLoader
 from .user_simulator import SyntheticPatientSimulator

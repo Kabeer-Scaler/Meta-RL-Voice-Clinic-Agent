@@ -9,6 +9,9 @@ COPY requirements.txt .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Verify openenv-core is properly installed and importable
+RUN python -c "from openenv_core.env_server import create_fastapi_app"
+
 # Copy application code
 COPY src/ ./src/
 COPY app.py .

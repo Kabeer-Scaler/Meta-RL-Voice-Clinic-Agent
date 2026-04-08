@@ -1,6 +1,6 @@
 """FastAPI application using OpenEnv framework."""
 
-from openenv.core.env_server import create_fastapi_app
+from src.voiceclinicagent.openenv_compat import create_fastapi_app
 from src.voiceclinicagent.api_models import VoiceClinicAction, VoiceClinicObservation
 from src.voiceclinicagent.env import VoiceClinicEnvironment
 
