@@ -1,5 +1,6 @@
 """VoiceClinicEnvironment following OpenEnv pattern."""
 
+from __future__ import annotations
 from typing import Optional, Dict, Any
 from openenv_core.env_server import Environment
 from .api_models import VoiceClinicAction, VoiceClinicObservation, VoiceClinicState
