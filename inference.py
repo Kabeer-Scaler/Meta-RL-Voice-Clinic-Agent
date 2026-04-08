@@ -577,14 +577,20 @@ def main():
     """Main entry point for inference baseline."""
     import argparse
     
+    # Ensure stdout is unbuffered for immediate output
+    sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure') else None
+    
+    # Test that stdout logging works immediately
+    print("[TEST] Structured logging initialized", flush=True)
+    
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="VoiceClinicAgent Inference")
     parser.add_argument(
         "--agent",
         type=str,
-        default="llm",
+        default=None,  # Changed to None to allow auto-detection
         choices=["rule-based", "llm"],
-        help="Agent type to use (default: llm)"
+        help="Agent type to use (default: auto-detect based on API_KEY)"
     )
     parser.add_argument(
         "--tasks",
@@ -596,7 +602,12 @@ def main():
     args = parser.parse_args()
     
     # Determine agent type and model name
-    agent_type = args.agent
+    # Auto-detect: if API_KEY is provided, use LLM agent; otherwise use rule-based
+    if args.agent is not None:
+        agent_type = args.agent
+    else:
+        # Auto-detect based on API_KEY availability
+        agent_type = "llm" if API_KEY else "rule-based"
     
     # If LLM agent requested but no API_KEY, fall back to rule-based
     if agent_type == "llm" and not API_KEY:
@@ -610,6 +621,15 @@ def main():
     
     # Task IDs to evaluate
     task_ids = args.tasks
+    
+    # Check if environment server is reachable
+    try:
+        health_response = requests.get(f"{ENV_BASE_URL}/health", timeout=5)
+        if health_response.status_code != 200:
+            print(f"[WARNING] Environment server health check failed: {health_response.status_code}", file=sys.stderr)
+    except Exception as e:
+        print(f"[WARNING] Cannot reach environment server at {ENV_BASE_URL}: {e}", file=sys.stderr)
+        print(f"[WARNING] Continuing anyway, will attempt to run episodes...", file=sys.stderr)
     
     # Run all tasks
     scores = []
@@ -632,6 +652,10 @@ def main():
             scores.append(score)
         except Exception as e:
             print(f"[ERROR] Task {task_id} failed: {e}", file=sys.stderr, flush=True)
+            # Still emit structured logs for failed task
+            print(f"[START] task={task_id} env={BENCHMARK} model={model_display}", flush=True)
+            print(f"[STEP] step=0 action=reset reward=0.00 done=true error={str(e)}", flush=True)
+            print(f"[END] success=false steps=0 score=0.000 rewards=", flush=True)
             scores.append(0.0)
     
     # Print summary to stderr (not stdout, to avoid interfering with structured logs)
