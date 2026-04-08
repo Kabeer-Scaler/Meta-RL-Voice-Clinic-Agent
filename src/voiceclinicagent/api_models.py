@@ -1,7 +1,7 @@
 """API request/response models using OpenEnv base classes."""
 
 from typing import Dict, Any, Optional, Literal, List, Union
-from openenv_core.env_server import Action, Observation, State
+from openenv.core.env_server import Action, Observation, State
 from pydantic import Field
 from .models import ClinicalHistory
 
