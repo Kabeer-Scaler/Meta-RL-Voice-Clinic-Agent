@@ -1,7 +1,7 @@
 """OpenEnv client for VoiceClinicAgent."""
 
-from openenv.core.env_client import EnvClient
-from openenv.core.client_types import StepResult
+from openenv_core.env_client import EnvClient
+from openenv_core.client_types import StepResult
 from .api_models import VoiceClinicAction, VoiceClinicObservation, VoiceClinicState
 
 
