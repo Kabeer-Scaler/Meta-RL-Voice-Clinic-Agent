@@ -27,7 +27,7 @@ dev = [
 ]
 
 [project.scripts]
-server = "uvicorn:main"
+server = "server.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
