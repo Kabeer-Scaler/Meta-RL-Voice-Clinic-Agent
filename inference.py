@@ -33,14 +33,7 @@ except (ImportError, TypeError):
 from src.voiceclinicagent.api_models import VoiceClinicAction
 
 
-# Environment variables with defaults
-# Note: API_BASE_URL is for LLM API, ENV_BASE_URL is for the environment server
-ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
-API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
-# Validator provides API_KEY, but we also support HF_TOKEN for backward compatibility
-API_KEY = os.getenv("API_KEY", os.getenv("HF_TOKEN", ""))
-HF_TOKEN = API_KEY  # Alias for backward compatibility
+# Constants
 BENCHMARK = "voice-clinic-agent"
 
 
@@ -363,7 +356,7 @@ class RuleBasedAgent:
         return VoiceClinicAction(action_type="end_call", payload={})
 
 
-def run_episode(task_id: str, env_base: str, api_base: str, model_name: str, agent_type: str = "rule-based") -> float:
+def run_episode(task_id: str, env_base: str, api_base: str, api_key: str, model_name: str, agent_type: str = "rule-based") -> float:
     """
     Run a single episode with structured logging.
     
@@ -371,6 +364,7 @@ def run_episode(task_id: str, env_base: str, api_base: str, model_name: str, age
         task_id: Task identifier (easy_001, medium_001, hard_001)
         env_base: Base URL for the environment API (local server)
         api_base: Base URL for the LLM API (OpenAI, HF, etc.)
+        api_key: API key for LLM
         model_name: Model name for logging
         agent_type: "rule-based" or "llm"
         
@@ -379,12 +373,12 @@ def run_episode(task_id: str, env_base: str, api_base: str, model_name: str, age
     """
     # Create agent based on type
     if agent_type == "llm":
-        if not API_KEY:
+        if not api_key or not api_key.strip():
             print("[WARNING] API_KEY not set, using rule-based agent instead", file=sys.stderr)
             agent = RuleBasedAgent()
         else:
             print(f"[DEBUG] Creating LLMAgent with base_url={api_base}, model={model_name}", file=sys.stderr, flush=True)
-            agent = LLMAgent(api_key=API_KEY, model=model_name, base_url=api_base)
+            agent = LLMAgent(api_key=api_key, model=model_name, base_url=api_base)
             print(f"[DEBUG] LLMAgent created successfully", file=sys.stderr, flush=True)
     else:
         agent = RuleBasedAgent()
@@ -583,6 +577,14 @@ def main():
     """Main entry point for inference baseline."""
     import argparse
     
+    # CRITICAL: Read environment variables HERE, not at module level!
+    # This ensures they're read AFTER the validator injects them
+    ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
+    API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+    MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
+    # Validator provides API_KEY, but we also support HF_TOKEN for backward compatibility
+    API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN") or ""
+    
     # Ensure stdout is unbuffered for immediate output
     sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure') else None
     
@@ -590,14 +592,15 @@ def main():
     print("[TEST] Structured logging initialized", flush=True)
     
     # Debug: Log environment variable detection (to stderr, not stdout)
-    print(f"[DEBUG] API_KEY present: {bool(API_KEY)}", file=sys.stderr, flush=True)
+    print(f"[DEBUG] API_KEY present: {bool(API_KEY and API_KEY.strip())}", file=sys.stderr, flush=True)
+    print(f"[DEBUG] API_KEY length: {len(API_KEY) if API_KEY else 0}", file=sys.stderr, flush=True)
     print(f"[DEBUG] API_BASE_URL: {API_BASE_URL}", file=sys.stderr, flush=True)
     print(f"[DEBUG] MODEL_NAME: {MODEL_NAME}", file=sys.stderr, flush=True)
     print(f"[DEBUG] ENV_BASE_URL: {ENV_BASE_URL}", file=sys.stderr, flush=True)
     
     # CRITICAL: Make a test LLM API call IMMEDIATELY if API_KEY is present
     # This ensures the validator sees at least one API call, even if episodes fail
-    if API_KEY:
+    if API_KEY and API_KEY.strip():
         try:
             print(f"[DEBUG] Making test LLM API call to verify connectivity...", file=sys.stderr, flush=True)
             test_client = OpenAI(api_key=API_KEY, base_url=API_BASE_URL)
@@ -612,7 +615,12 @@ def main():
             )
             print(f"[DEBUG] Test LLM API call successful! Response: {test_response.choices[0].message.content}", file=sys.stderr, flush=True)
         except Exception as e:
-            print(f"[WARNING] Test LLM API call failed: {e}", file=sys.stderr, flush=True)
+            print(f"[ERROR] Test LLM API call failed: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+            import traceback
+            traceback.print_exc(file=sys.stderr)
+    else:
+        print(f"[ERROR] Skipping test LLM call - API_KEY not available or empty!", file=sys.stderr, flush=True)
+        print(f"[ERROR] API_KEY value: {repr(API_KEY)}", file=sys.stderr, flush=True)
     
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="VoiceClinicAgent Inference")
@@ -644,7 +652,7 @@ def main():
     print(f"[DEBUG] Selected agent type: {agent_type}", file=sys.stderr, flush=True)
     
     # If LLM agent requested but no API_KEY, fall back to rule-based
-    if agent_type == "llm" and not API_KEY:
+    if agent_type == "llm" and (not API_KEY or not API_KEY.strip()):
         print("[WARNING] API_KEY not set, falling back to rule-based agent", file=sys.stderr)
         agent_type = "rule-based"
     
@@ -680,6 +688,7 @@ def main():
                 task_id=task_id,
                 env_base=ENV_BASE_URL,
                 api_base=API_BASE_URL,
+                api_key=API_KEY,
                 model_name=model_display,
                 agent_type=agent_type
             )
