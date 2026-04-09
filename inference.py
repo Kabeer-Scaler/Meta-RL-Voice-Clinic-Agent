@@ -586,11 +586,12 @@ def main():
     # Support both HF_TOKEN (official requirement) and API_KEY (validator provides)
     HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
     
+    # Official hackathon requirement: raise ValueError if HF_TOKEN is None
+    if HF_TOKEN is None:
+        raise ValueError("HF_TOKEN environment variable is required")
+    
     # Use HF_TOKEN as API_KEY for backward compatibility
     API_KEY = HF_TOKEN
-    
-    # Note: Official hackathon docs require ValueError if HF_TOKEN is None,
-    # but we skip it here to allow rule-based agent to work without token
     
     # Ensure stdout is unbuffered for immediate output
     sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure') else None
@@ -646,13 +647,13 @@ def main():
     args = parser.parse_args()
     
     # Determine agent type and model name
-    # ALWAYS use rule-based agent for reliability (it works perfectly)
-    # But we made a test LLM API call above to satisfy validator requirements
+    # Use LLM agent when API_KEY is available (validator Phase 1)
+    # This ensures LLM API calls are made during episode execution
     if args.agent is not None:
         agent_type = args.agent
     else:
-        # Use rule-based by default for reliability
-        agent_type = "rule-based"
+        # Auto-detect: use LLM if token is available, otherwise rule-based
+        agent_type = "llm" if API_KEY else "rule-based"
     
     print(f"[DEBUG] Selected agent type: {agent_type}", file=sys.stderr, flush=True)
     
