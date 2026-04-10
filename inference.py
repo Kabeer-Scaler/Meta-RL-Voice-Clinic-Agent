@@ -3,7 +3,7 @@ Inference Script for VoiceClinicAgent - OpenEnv Format Compliant
 
 MANDATORY REQUIREMENTS:
 - Uses OpenAI Client for all LLM calls
-- Reads API_BASE_URL, MODEL_NAME, HF_TOKEN from environment
+- Reads API_BASE_URL, MODEL_NAME, API_KEY from environment
 - Emits structured stdout logs: [START], [STEP], [END]
 - Returns scores in [0.0, 1.0]
 """
@@ -20,6 +20,13 @@ import requests
 from dotenv import load_dotenv
 if os.path.exists('.env'):
     load_dotenv()  # Only load if .env file exists (local development)
+
+# CRITICAL: Read environment variables at MODULE LEVEL (validator injects these)
+# This matches the official hackathon pattern
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+API_KEY = os.getenv("API_KEY")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4.1-mini")
+ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 
 # Import the OpenEnv client - handle case where it's not available
 try:
@@ -594,25 +601,6 @@ def main():
     """Main entry point for inference baseline."""
     import argparse
     
-    # CRITICAL: Read environment variables HERE, not at module level!
-    # This ensures they're read AFTER the validator injects them
-    # Use EXACTLY what validator provides - no HF_TOKEN fallback!
-    ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
-    
-    # Read from environment - validator injects these EXACT variable names
-    try:
-        API_BASE_URL = os.environ["API_BASE_URL"]
-    except KeyError:
-        raise ValueError("API_BASE_URL environment variable is required")
-    
-    try:
-        API_KEY = os.environ["API_KEY"]
-    except KeyError:
-        raise ValueError("API_KEY environment variable is required")
-    
-    # MODEL_NAME can have default as per official guidelines
-    MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4.1-mini")
-    
     # Ensure stdout is unbuffered for immediate output
     sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure') else None
     
@@ -624,6 +612,12 @@ def main():
     print(f"[DEBUG] API_BASE_URL: {API_BASE_URL}", file=sys.stderr, flush=True)
     print(f"[DEBUG] MODEL_NAME: {MODEL_NAME}", file=sys.stderr, flush=True)
     print(f"[DEBUG] ENV_BASE_URL: {ENV_BASE_URL}", file=sys.stderr, flush=True)
+    
+    # Validate required environment variables
+    if not API_KEY:
+        raise ValueError("API_KEY environment variable is required")
+    if not API_BASE_URL:
+        raise ValueError("API_BASE_URL environment variable is required")
     
     # CRITICAL: Verify we're using the validator's proxy, not OpenAI directly
     if "api.openai.com" in API_BASE_URL:
