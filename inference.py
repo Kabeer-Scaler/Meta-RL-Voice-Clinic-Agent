@@ -103,19 +103,30 @@ def verify_proxy_call(config: RuntimeConfig) -> None:
     """
     client = OpenAI(api_key=config.api_key, base_url=config.api_base_url)
     try:
-        client.chat.completions.create(
+        response = client.chat.completions.create(
             model=config.model_name,
             messages=[{"role": "user", "content": "ping"}],
             max_tokens=5,
             temperature=0.0,
         )
+        # Log success to stderr
+        import sys
+        print(f"[DEBUG] Proxy call succeeded! Response: {response.choices[0].message.content}", file=sys.stderr, flush=True)
     except Exception as exc:
+        # Log detailed error to stderr
+        import sys
+        import traceback
+        print(f"[ERROR] Proxy call failed with {type(exc).__name__}: {exc}", file=sys.stderr, flush=True)
+        print(f"[ERROR] Full traceback:", file=sys.stderr, flush=True)
+        traceback.print_exc(file=sys.stderr)
+        
+        # Re-raise with more context
         raise RuntimeError(
-            "Mandatory validator proxy call failed. "
+            f"Mandatory validator proxy call failed. "
             f"API_BASE_URL={config.api_base_url!r}, "
             f"API_KEY={_mask_secret(config.api_key)}, "
             f"MODEL_NAME={config.model_name!r}. "
-            f"{type(exc).__name__}: {exc}"
+            f"Error: {type(exc).__name__}: {exc}"
         ) from exc
 
 
