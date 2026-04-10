@@ -583,20 +583,24 @@ def main():
     
     # CRITICAL: Read environment variables HERE, not at module level!
     # This ensures they're read AFTER the validator injects them
+    # NO FALLBACKS - must use validator's proxy!
     ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
-    API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
-    MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4.1-mini")
     
-    # Read HF_TOKEN as per official guidelines
-    HF_TOKEN = os.getenv("HF_TOKEN")
+    # Read from environment WITHOUT fallbacks (validator injects these)
+    API_BASE_URL = os.environ.get("API_BASE_URL")
+    MODEL_NAME = os.environ.get("MODEL_NAME")
     
-    # Validator provides API_KEY, so use it as fallback
-    if HF_TOKEN is None:
-        HF_TOKEN = os.getenv("API_KEY")
+    # Read HF_TOKEN or API_KEY (validator may provide either)
+    HF_TOKEN = os.environ.get("HF_TOKEN") or os.environ.get("API_KEY")
     
-    # Official hackathon requirement: raise ValueError if HF_TOKEN is None
-    if HF_TOKEN is None:
-        raise ValueError("HF_TOKEN environment variable is required")
+    # Fail fast if critical variables are missing
+    if not API_BASE_URL:
+        raise ValueError("API_BASE_URL environment variable is required")
+    if not MODEL_NAME:
+        # Provide default for MODEL_NAME as per official guidelines
+        MODEL_NAME = "gpt-4.1-mini"
+    if not HF_TOKEN:
+        raise ValueError("HF_TOKEN or API_KEY environment variable is required")
     
     # Use HF_TOKEN as the API key
     API_KEY = HF_TOKEN
@@ -613,28 +617,12 @@ def main():
     print(f"[DEBUG] MODEL_NAME: {MODEL_NAME}", file=sys.stderr, flush=True)
     print(f"[DEBUG] ENV_BASE_URL: {ENV_BASE_URL}", file=sys.stderr, flush=True)
     
-    # CRITICAL: Make a test LLM API call if API_KEY is provided
-    # This ensures the validator sees at least one API call in Phase 1
-    if API_KEY:
-        try:
-            print(f"[DEBUG] Making test LLM API call to verify connectivity...", file=sys.stderr, flush=True)
-            test_client = OpenAI(api_key=API_KEY, base_url=API_BASE_URL)
-            test_response = test_client.chat.completions.create(
-                model=MODEL_NAME,
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": "Say 'ready' if you can hear me."}
-                ],
-                temperature=0.0,
-                max_tokens=10
-            )
-            print(f"[DEBUG] Test LLM API call successful! Response: {test_response.choices[0].message.content}", file=sys.stderr, flush=True)
-        except Exception as e:
-            print(f"[ERROR] Test LLM API call failed: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
-            import traceback
-            traceback.print_exc(file=sys.stderr)
+    # CRITICAL: Verify we're using the validator's proxy, not OpenAI directly
+    if "api.openai.com" in API_BASE_URL:
+        print(f"[ERROR] Using OpenAI directly instead of validator proxy!", file=sys.stderr, flush=True)
+        print(f"[ERROR] This will cause 'No API calls detected' error!", file=sys.stderr, flush=True)
     else:
-        print(f"[INFO] No API_KEY provided - skipping test LLM call (will use rule-based agent)", file=sys.stderr, flush=True)
+        print(f"[INFO] Using validator's LiteLLM proxy: {API_BASE_URL}", file=sys.stderr, flush=True)
     
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="VoiceClinicAgent Inference")
@@ -655,13 +643,12 @@ def main():
     args = parser.parse_args()
     
     # Determine agent type and model name
-    # Use LLM agent when API_KEY is available (validator Phase 1)
-    # This ensures LLM API calls are made during episode execution
+    # FORCE LLM agent to ensure API calls are made through validator's proxy
     if args.agent is not None:
         agent_type = args.agent
     else:
-        # Auto-detect: use LLM if token is available, otherwise rule-based
-        agent_type = "llm" if API_KEY else "rule-based"
+        # ALWAYS use LLM agent when running through validator
+        agent_type = "llm"
     
     print(f"[DEBUG] Selected agent type: {agent_type}", file=sys.stderr, flush=True)
     
