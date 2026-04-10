@@ -15,9 +15,9 @@ from typing import List, Optional
 from openai import OpenAI
 import requests
 
-# CRITICAL: Keep module-level reads for validator compatibility, but re-read at runtime
-# so we don't cache stale values if the execution environment mutates env vars later.
-DEFAULT_API_BASE_URL = "https://router.huggingface.co/v1"
+# CRITICAL: Keep module-level reads for validator compatibility, but never
+# fall back to a third-party provider URL. The validator must supply the proxy.
+DEFAULT_API_BASE_URL = ""
 DEFAULT_MODEL_NAME = "gpt-4.1-mini"
 DEFAULT_ENV_BASE_URL = "http://localhost:7860"
 
@@ -80,10 +80,10 @@ def load_runtime_config() -> RuntimeConfig:
         raise ValueError("API_KEY environment variable is required")
     if not api_base_url:
         raise ValueError("API_BASE_URL environment variable is required")
-    if "api.openai.com" in api_base_url:
+    if "api.openai.com" in api_base_url or "router.huggingface.co" in api_base_url:
         raise ValueError(
-            "API_BASE_URL is still pointing at the default OpenAI URL. "
-            "The validator requires its injected LiteLLM proxy URL."
+            "API_BASE_URL is pointing at a fallback provider URL instead of the "
+            "validator's injected LiteLLM proxy URL."
         )
 
     return RuntimeConfig(
