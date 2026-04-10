@@ -7,31 +7,12 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import os
 
-def build_app():
-    """
-    Create the FastAPI app across both old and new openenv-core variants.
-
-    Older openenv_core versions expect an environment instance.
-    Newer openenv/openenv-core versions expect the environment class/factory.
-    """
-    try:
-        return create_fastapi_app(
-            VoiceClinicEnvironment(),
-            VoiceClinicAction,
-            VoiceClinicObservation,
-        )
-    except TypeError as exc:
-        # Newer openenv-core explicitly rejects instances and asks for a callable.
-        if "env must be a callable" not in str(exc):
-            raise
-        return create_fastapi_app(
-            VoiceClinicEnvironment,
-            VoiceClinicAction,
-            VoiceClinicObservation,
-        )
-
-
-app = build_app()
+# The compatibility shim handles both old "instance" and new "callable" APIs.
+app = create_fastapi_app(
+    VoiceClinicEnvironment(),
+    VoiceClinicAction,
+    VoiceClinicObservation,
+)
 
 # Mount static files if directory exists
 if os.path.exists("static"):
