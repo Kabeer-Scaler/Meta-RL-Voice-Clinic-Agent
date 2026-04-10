@@ -6,6 +6,12 @@ from pydantic import Field
 from .models import ClinicalHistory
 
 
+def _supports_legacy_init_error(exc: TypeError) -> bool:
+    """Detect older openenv-core base classes that reject subclass kwargs."""
+    message = str(exc)
+    return "unexpected keyword argument" in message or "positional argument" in message
+
+
 class VoiceClinicAction(Action):
     """Agent action with typed payload."""
     action_type: Literal[
@@ -22,6 +28,23 @@ class VoiceClinicAction(Action):
         "end_call",
     ]
     payload: Dict[str, Any] = Field(default_factory=dict)
+
+    def __init__(self, **data):
+        """Support both Pydantic-style and legacy openenv-core base classes."""
+        try:
+            super().__init__(**data)
+            return
+        except TypeError as exc:
+            if not _supports_legacy_init_error(exc):
+                raise
+
+        metadata = data.pop("metadata", {})
+        action_type = data.pop("action_type")
+        payload = data.pop("payload", {})
+
+        super().__init__(metadata=metadata)
+        object.__setattr__(self, "action_type", action_type)
+        object.__setattr__(self, "payload", payload)
 
 
 class PatientFlags(dict):
@@ -52,6 +75,24 @@ class VoiceClinicObservation(Observation):
     clinical_history: ClinicalHistory
     history_accessed_this_turn: bool = False
 
+    def __init__(self, **data):
+        """Support both modern and legacy Observation base classes."""
+        try:
+            super().__init__(**data)
+            return
+        except TypeError as exc:
+            if not _supports_legacy_init_error(exc):
+                raise
+
+        base_data = {
+            "done": data.pop("done", False),
+            "reward": data.pop("reward", None),
+            "metadata": data.pop("metadata", {}),
+        }
+        super().__init__(**base_data)
+        for key, value in data.items():
+            object.__setattr__(self, key, value)
+
 
 class VoiceClinicState(State):
     """Episode metadata.
@@ -67,3 +108,21 @@ class VoiceClinicState(State):
     escalated_urgent: bool = False
     escalated_human: bool = False
     grade_report: Optional[Dict[str, Any]] = None  # Full breakdown when done
+
+    def __init__(self, **data):
+        """Support both modern and legacy State base classes."""
+        try:
+            super().__init__(**data)
+            return
+        except TypeError as exc:
+            if not _supports_legacy_init_error(exc):
+                raise
+
+        base_data = {
+            "episode_id": data.pop("episode_id", None),
+            "step_count": data.pop("step_count", 0),
+            "metadata": data.pop("metadata", {}),
+        }
+        super().__init__(**base_data)
+        for key, value in data.items():
+            object.__setattr__(self, key, value)
