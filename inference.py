@@ -17,7 +17,7 @@ import requests
 
 # CRITICAL: Keep module-level reads for validator compatibility, but re-read at runtime
 # so we don't cache stale values if the execution environment mutates env vars later.
-DEFAULT_API_BASE_URL = "https://api.openai.com/v1"
+DEFAULT_API_BASE_URL = "https://router.huggingface.co/v1"
 DEFAULT_MODEL_NAME = "gpt-4.1-mini"
 DEFAULT_ENV_BASE_URL = "http://localhost:7860"
 
