@@ -596,30 +596,22 @@ def main():
     
     # CRITICAL: Read environment variables HERE, not at module level!
     # This ensures they're read AFTER the validator injects them
-    # NO FALLBACKS - must use validator's proxy!
+    # Use EXACTLY what validator provides - no HF_TOKEN fallback!
     ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
     
-    # Read from environment WITHOUT fallbacks (validator injects these)
-    # Use strict access to fail fast if missing
+    # Read from environment - validator injects these EXACT variable names
     try:
         API_BASE_URL = os.environ["API_BASE_URL"]
     except KeyError:
         raise ValueError("API_BASE_URL environment variable is required")
     
     try:
-        MODEL_NAME = os.environ["MODEL_NAME"]
+        API_KEY = os.environ["API_KEY"]
     except KeyError:
-        # Provide default for MODEL_NAME as per official guidelines
-        MODEL_NAME = "gpt-4.1-mini"
+        raise ValueError("API_KEY environment variable is required")
     
-    # Read HF_TOKEN or API_KEY (validator may provide either)
-    HF_TOKEN = os.environ.get("HF_TOKEN") or os.environ.get("API_KEY")
-    
-    if not HF_TOKEN:
-        raise ValueError("HF_TOKEN or API_KEY environment variable is required")
-    
-    # Use HF_TOKEN as the API key
-    API_KEY = HF_TOKEN
+    # MODEL_NAME can have default as per official guidelines
+    MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4.1-mini")
     
     # Ensure stdout is unbuffered for immediate output
     sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure') else None
