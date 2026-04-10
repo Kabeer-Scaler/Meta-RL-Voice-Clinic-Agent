@@ -685,12 +685,8 @@ def main():
     print(f"[INFO] Using validator's LiteLLM proxy: {config.api_base_url}", file=sys.stderr, flush=True)
 
     print("[DEBUG] Making mandatory validator proxy call...", file=sys.stderr, flush=True)
-    try:
-        verify_proxy_call(config)
-        print("[DEBUG] Mandatory validator proxy call succeeded", file=sys.stderr, flush=True)
-    except Exception as e:
-        print(f"[ERROR] Mandatory validator proxy call failed: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
-        # Don't raise - continue anyway to let episodes run
+    verify_proxy_call(config)
+    print("[DEBUG] Mandatory validator proxy call succeeded", file=sys.stderr, flush=True)
     
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="VoiceClinicAgent Inference")
