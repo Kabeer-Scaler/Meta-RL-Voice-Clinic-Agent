@@ -57,26 +57,22 @@ class ObservationBuilder:
         Returns:
             VoiceClinicObservation
         """
-        # Create observation with only base Observation fields
-        obs = VoiceClinicObservation(
+        return VoiceClinicObservation(
             done=done,
             reward=reward,
+            task_level=task_level,
+            turn_idx=turn_idx,
+            max_turns=max_turns,
+            patient_message=patient_response.text,
+            conversation_summary=conversation_summary,
+            patient_flags=patient_flags,
+            clinic_state=clinic_state,
+            clinical_history=clinical_history,
+            reflection_token=reflection_token,
+            memory_vault_summary=memory_vault_summary,
+            privacy_risk_mask=privacy_risk_mask,
+            history_accessed_this_turn=history_accessed_this_turn,
         )
-        # Set custom fields after instantiation
-        obs.task_level = task_level
-        obs.turn_idx = turn_idx
-        obs.max_turns = max_turns
-        obs.patient_message = patient_response.text
-        obs.conversation_summary = conversation_summary
-        obs.patient_flags = patient_flags
-        obs.clinic_state = clinic_state
-        obs.clinical_history = clinical_history
-        obs.reflection_token = reflection_token
-        obs.memory_vault_summary = memory_vault_summary
-        obs.privacy_risk_mask = privacy_risk_mask
-        obs.history_accessed_this_turn = history_accessed_this_turn
-        
-        return obs
     
     @staticmethod
     def build_patient_flags(

@@ -22,20 +22,6 @@ class VoiceClinicAction(Action):
         "end_call",
     ]
     payload: Dict[str, Any] = Field(default_factory=dict)
-    
-    def __init__(self, **data):
-        """Custom init to handle base Action class constraints."""
-        # Extract our custom fields
-        action_type = data.pop('action_type', None)
-        payload = data.pop('payload', {})
-        
-        # Initialize base Action class with remaining data
-        super().__init__(**data)
-        
-        # Set our custom fields after initialization
-        if action_type is not None:
-            object.__setattr__(self, 'action_type', action_type)
-        object.__setattr__(self, 'payload', payload)
 
 
 class PatientFlags(dict):

@@ -10,23 +10,21 @@ MANDATORY REQUIREMENTS:
 
 import os
 import sys
-import json
+from dataclasses import dataclass
 from typing import List, Optional
 from openai import OpenAI
 import requests
 
-# Load environment variables from .env file (only for local development)
-# In production (Docker/HF Spaces), environment variables are injected directly
-from dotenv import load_dotenv
-if os.path.exists('.env'):
-    load_dotenv()  # Only load if .env file exists (local development)
+# CRITICAL: Keep module-level reads for validator compatibility, but re-read at runtime
+# so we don't cache stale values if the execution environment mutates env vars later.
+DEFAULT_API_BASE_URL = "https://api.openai.com/v1"
+DEFAULT_MODEL_NAME = "gpt-4.1-mini"
+DEFAULT_ENV_BASE_URL = "http://localhost:7860"
 
-# CRITICAL: Read environment variables at MODULE LEVEL (validator injects these)
-# This matches the official hackathon pattern
-API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+API_BASE_URL = os.getenv("API_BASE_URL", DEFAULT_API_BASE_URL)
 API_KEY = os.getenv("API_KEY")
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4.1-mini")
-ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
+MODEL_NAME = os.getenv("MODEL_NAME", DEFAULT_MODEL_NAME)
+ENV_BASE_URL = os.getenv("ENV_BASE_URL", DEFAULT_ENV_BASE_URL)
 
 # Import the OpenEnv client - handle case where it's not available
 try:
@@ -42,6 +40,83 @@ from src.voiceclinicagent.api_models import VoiceClinicAction
 
 # Constants
 BENCHMARK = "voice-clinic-agent"
+
+
+@dataclass(frozen=True)
+class RuntimeConfig:
+    api_base_url: str
+    api_key: str
+    model_name: str
+    env_base_url: str
+
+
+def _clean_env_value(value: Optional[str]) -> str:
+    """Normalize optional env vars so whitespace-only values are treated as missing."""
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _mask_secret(secret: str) -> str:
+    """Mask a secret before logging it to stderr."""
+    if not secret:
+        return "<missing>"
+    if len(secret) <= 8:
+        return "*" * len(secret)
+    return f"{secret[:4]}...{secret[-4:]}"
+
+
+def load_runtime_config() -> RuntimeConfig:
+    """
+    Re-read env vars immediately before execution.
+
+    This avoids using stale values from module import time and strips accidental
+    whitespace that would otherwise break proxy auth or URL parsing.
+    """
+    api_base_url = _clean_env_value(os.environ.get("API_BASE_URL", API_BASE_URL))
+    api_key = _clean_env_value(os.environ.get("API_KEY", API_KEY))
+    model_name = _clean_env_value(os.environ.get("MODEL_NAME", MODEL_NAME)) or DEFAULT_MODEL_NAME
+    env_base_url = _clean_env_value(os.environ.get("ENV_BASE_URL", ENV_BASE_URL)) or DEFAULT_ENV_BASE_URL
+
+    if not api_key:
+        raise ValueError("API_KEY environment variable is required")
+    if not api_base_url:
+        raise ValueError("API_BASE_URL environment variable is required")
+    if "api.openai.com" in api_base_url:
+        raise ValueError(
+            "API_BASE_URL is still pointing at the default OpenAI URL. "
+            "The validator requires its injected LiteLLM proxy URL."
+        )
+
+    return RuntimeConfig(
+        api_base_url=api_base_url,
+        api_key=api_key,
+        model_name=model_name,
+        env_base_url=env_base_url,
+    )
+
+
+def verify_proxy_call(config: RuntimeConfig) -> None:
+    """
+    Make one mandatory call through the injected proxy.
+
+    We fail fast here instead of swallowing the exception; otherwise the script can
+    appear to succeed while the validator records zero LLM calls.
+    """
+    client = OpenAI(api_key=config.api_key, base_url=config.api_base_url)
+    try:
+        client.chat.completions.create(
+            model=config.model_name,
+            messages=[{"role": "user", "content": "ping"}],
+            max_tokens=5,
+            temperature=0.0,
+        )
+    except Exception as exc:
+        raise RuntimeError(
+            "Mandatory validator proxy call failed. "
+            f"API_BASE_URL={config.api_base_url!r}, "
+            f"API_KEY={_mask_secret(config.api_key)}, "
+            f"MODEL_NAME={config.model_name!r}. "
+            f"{type(exc).__name__}: {exc}"
+        ) from exc
 
 
 def log_start(task: str, env: str, model: str) -> None:
@@ -389,21 +464,6 @@ def run_episode(task_id: str, env_base: str, api_base: str, api_key: str, model_
         print(f"[DEBUG] Creating LLMAgent with base_url={api_base}, model={model_name}", file=sys.stderr, flush=True)
         agent = LLMAgent(api_key=api_key, model=model_name, base_url=api_base)
         print(f"[DEBUG] LLMAgent created successfully", file=sys.stderr, flush=True)
-        
-        # 🔥 FORCE API CALL INSIDE EPISODE (ensures Phase 2 validation passes)
-        # Make at least one API call even if episode logic fails
-        try:
-            print(f"[DEBUG] Making forced API call inside episode...", file=sys.stderr, flush=True)
-            _ = agent.client.chat.completions.create(
-                model=model_name,
-                messages=[{"role": "user", "content": "ping"}],
-                max_tokens=5,
-                temperature=0.0
-            )
-            print(f"[DEBUG] Forced API call SUCCESS", file=sys.stderr, flush=True)
-        except Exception as e:
-            print(f"[ERROR] Forced API call FAILED: {e}", file=sys.stderr, flush=True)
-            # Don't raise - continue with episode
     else:
         agent = RuleBasedAgent()
     
@@ -494,6 +554,7 @@ def run_episode(task_id: str, env_base: str, api_base: str, api_key: str, model_
             )
             response.raise_for_status()
             data = response.json()
+            episode_id = data.get("episode_id")
             observation = data.get("observation", {})
             
             done = observation.get("done", False)
@@ -530,14 +591,21 @@ def run_episode(task_id: str, env_base: str, api_base: str, api_key: str, model_
                 try:
                     response = requests.post(
                         f"{env_base}/step",
-                        json={"action_type": action.action_type, "payload": action.payload},
+                        json={
+                            "episode_id": episode_id,
+                            "action": {
+                                "action_type": action.action_type,
+                                "payload": action.payload,
+                            },
+                        },
                         timeout=30
                     )
                     response.raise_for_status()
                     data = response.json()
                     observation = data.get("observation", {})
-                    done = observation.get("done", False)
-                    reward = observation.get("reward", 0.0) if observation.get("reward") is not None else 0.0
+                    done = data.get("done", observation.get("done", False))
+                    reward_value = data.get("reward", observation.get("reward"))
+                    reward = reward_value if reward_value is not None else 0.0
                     error = None
                     
                     rewards.append(reward)
@@ -568,8 +636,8 @@ def run_episode(task_id: str, env_base: str, api_base: str, api_key: str, model_
             
             # Get final state
             try:
-                # Extract episode_id from first reset if available
-                episode_id = data.get("episode_id", "unknown")
+                # Extract episode_id from reset if available
+                episode_id = episode_id or "unknown"
                 response = requests.get(f"{env_base}/state/{episode_id}", timeout=30)
                 response.raise_for_status()
                 state_data = response.json()
@@ -607,52 +675,21 @@ def main():
     # Test that stdout logging works immediately (send to stderr to avoid interfering with structured logs)
     print("[TEST] Structured logging initialized", file=sys.stderr, flush=True)
     
-    # Debug: Log environment variable detection (to stderr, not stdout)
-    print(f"[DEBUG] API_KEY present: {bool(API_KEY)}", file=sys.stderr, flush=True)
-    print(f"[DEBUG] API_BASE_URL: {API_BASE_URL}", file=sys.stderr, flush=True)
-    print(f"[DEBUG] MODEL_NAME: {MODEL_NAME}", file=sys.stderr, flush=True)
-    print(f"[DEBUG] ENV_BASE_URL: {ENV_BASE_URL}", file=sys.stderr, flush=True)
-    
-    # Validate required environment variables
-    if not API_KEY:
-        raise ValueError("API_KEY environment variable is required")
-    if not API_BASE_URL:
-        raise ValueError("API_BASE_URL environment variable is required")
-    
-    # CRITICAL: Verify we're using the validator's proxy, not OpenAI directly
-    if "api.openai.com" in API_BASE_URL:
-        print(f"[ERROR] Using OpenAI directly instead of validator proxy!", file=sys.stderr, flush=True)
-        print(f"[ERROR] This will cause 'No API calls detected' error!", file=sys.stderr, flush=True)
-    else:
-        print(f"[INFO] Using validator's LiteLLM proxy: {API_BASE_URL}", file=sys.stderr, flush=True)
-    
-    # 🔥 CRITICAL: Make at least one API call for validator Phase 1
-    # This ensures the validator sees at least ONE API call even if episodes fail
-    try:
-        print("[DEBUG] Making test LLM call to validator proxy...", file=sys.stderr, flush=True)
-        test_client = OpenAI(api_key=API_KEY, base_url=API_BASE_URL)
-        test_response = test_client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[{"role": "user", "content": "ping"}],
-            max_tokens=5,
-            temperature=0.0
-        )
-        print(f"[DEBUG] Test API call SUCCESS! Response: {test_response.choices[0].message.content}", file=sys.stderr, flush=True)
-    except Exception as e:
-        print(f"[ERROR] Test API call FAILED: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
-        import traceback
-        traceback.print_exc(file=sys.stderr)
-        # Don't raise - continue to try episodes anyway
+    config = load_runtime_config()
+
+    # Debug: Log normalized runtime config (to stderr, not stdout)
+    print(f"[DEBUG] API_KEY: {_mask_secret(config.api_key)}", file=sys.stderr, flush=True)
+    print(f"[DEBUG] API_BASE_URL: {config.api_base_url}", file=sys.stderr, flush=True)
+    print(f"[DEBUG] MODEL_NAME: {config.model_name}", file=sys.stderr, flush=True)
+    print(f"[DEBUG] ENV_BASE_URL: {config.env_base_url}", file=sys.stderr, flush=True)
+    print(f"[INFO] Using validator's LiteLLM proxy: {config.api_base_url}", file=sys.stderr, flush=True)
+
+    print("[DEBUG] Making mandatory validator proxy call...", file=sys.stderr, flush=True)
+    verify_proxy_call(config)
+    print("[DEBUG] Mandatory validator proxy call succeeded", file=sys.stderr, flush=True)
     
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="VoiceClinicAgent Inference")
-    parser.add_argument(
-        "--agent",
-        type=str,
-        default=None,  # Changed to None to allow auto-detection
-        choices=["rule-based", "llm"],
-        help="Agent type to use (default: auto-detect based on API_KEY)"
-    )
     parser.add_argument(
         "--tasks",
         type=str,
@@ -662,35 +699,21 @@ def main():
     )
     args = parser.parse_args()
     
-    # Determine agent type and model name
-    # FORCE LLM agent to ensure API calls are made through validator's proxy
-    if args.agent is not None:
-        agent_type = args.agent
-    else:
-        # ALWAYS use LLM agent when running through validator
-        agent_type = "llm"
-    
+    # Always use the LLM path in the submission entrypoint so proxy traffic is guaranteed.
+    agent_type = "llm"
     print(f"[DEBUG] Selected agent type: {agent_type}", file=sys.stderr, flush=True)
-    
-    # If LLM agent requested but no API_KEY, fail immediately (no fallback)
-    if agent_type == "llm" and not API_KEY:
-        raise ValueError("API_KEY is required for LLM agent")
-    
-    if agent_type == "llm":
-        model_display = MODEL_NAME
-    else:
-        model_display = "rule-based-agent"
+    model_display = config.model_name
     
     # Task IDs to evaluate
     task_ids = args.tasks
     
     # Check if environment server is reachable
     try:
-        health_response = requests.get(f"{ENV_BASE_URL}/health", timeout=5)
+        health_response = requests.get(f"{config.env_base_url}/health", timeout=5)
         if health_response.status_code != 200:
             print(f"[WARNING] Environment server health check failed: {health_response.status_code}", file=sys.stderr)
     except Exception as e:
-        print(f"[WARNING] Cannot reach environment server at {ENV_BASE_URL}: {e}", file=sys.stderr)
+        print(f"[WARNING] Cannot reach environment server at {config.env_base_url}: {e}", file=sys.stderr)
         print(f"[WARNING] Continuing anyway, will attempt to run episodes...", file=sys.stderr)
     
     # Run all tasks
@@ -698,17 +721,17 @@ def main():
     
     print(f"\n[INFO] Running {agent_type} agent on {len(task_ids)} tasks...", file=sys.stderr)
     if agent_type == "llm":
-        print(f"[INFO] Using model: {MODEL_NAME}", file=sys.stderr)
-        print(f"[INFO] API Base: {API_BASE_URL}", file=sys.stderr)
+        print(f"[INFO] Using model: {config.model_name}", file=sys.stderr)
+        print(f"[INFO] API Base: {config.api_base_url}", file=sys.stderr)
     print("", file=sys.stderr)
     
     for task_id in task_ids:
         try:
             score = run_episode(
                 task_id=task_id,
-                env_base=ENV_BASE_URL,
-                api_base=API_BASE_URL,
-                api_key=API_KEY,
+                env_base=config.env_base_url,
+                api_base=config.api_base_url,
+                api_key=config.api_key,
                 model_name=model_display,
                 agent_type=agent_type
             )
