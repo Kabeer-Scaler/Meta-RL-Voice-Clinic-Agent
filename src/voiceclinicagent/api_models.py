@@ -81,6 +81,13 @@ class VoiceClinicObservation(Observation):
             super().__init__(**data)
             return
         except TypeError as exc:
+            # Debug: log the exception
+            import sys
+            print(f"[DEBUG] VoiceClinicObservation init caught TypeError: {exc}", file=sys.stderr, flush=True)
+            print(f"[DEBUG] Exception type: {type(exc)}", file=sys.stderr, flush=True)
+            print(f"[DEBUG] Exception message: {str(exc)}", file=sys.stderr, flush=True)
+            print(f"[DEBUG] Supports legacy: {_supports_legacy_init_error(exc)}", file=sys.stderr, flush=True)
+            
             if not _supports_legacy_init_error(exc):
                 raise
 

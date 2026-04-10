@@ -26,14 +26,10 @@ API_KEY = os.getenv("API_KEY")
 MODEL_NAME = os.getenv("MODEL_NAME", DEFAULT_MODEL_NAME)
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", DEFAULT_ENV_BASE_URL)
 
-# Import the OpenEnv client - handle case where it's not available
-try:
-    from src.voiceclinicagent.client import VoiceClinicEnv
-    CLIENT_AVAILABLE = VoiceClinicEnv is not None
-except (ImportError, TypeError):
-    # If EnvClient is not available, use requests directly
-    VoiceClinicEnv = None
-    CLIENT_AVAILABLE = False
+# Always use direct HTTP requests in the submission runtime.
+# This avoids compatibility issues across openenv-core client versions.
+VoiceClinicEnv = None
+CLIENT_AVAILABLE = False
 
 from src.voiceclinicagent.api_models import VoiceClinicAction
 
