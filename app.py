@@ -7,9 +7,12 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import os
 
-# Create FastAPI app using OpenEnv framework.
-# Recent openenv-core versions expect the environment class/factory, not an instance.
-app = create_fastapi_app(VoiceClinicEnvironment, VoiceClinicAction, VoiceClinicObservation)
+# Create environment instance
+env_instance = VoiceClinicEnvironment()
+
+# Create FastAPI app using OpenEnv framework
+# Pass the environment instance
+app = create_fastapi_app(env_instance, VoiceClinicAction, VoiceClinicObservation)
 
 # Mount static files if directory exists
 if os.path.exists("static"):
