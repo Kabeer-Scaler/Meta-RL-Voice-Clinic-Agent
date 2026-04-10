@@ -686,10 +686,9 @@ def main():
     
     print(f"[DEBUG] Selected agent type: {agent_type}", file=sys.stderr, flush=True)
     
-    # If LLM agent requested but no API_KEY, fall back to rule-based
+    # If LLM agent requested but no API_KEY, fail immediately (no fallback)
     if agent_type == "llm" and not API_KEY:
-        print("[WARNING] API_KEY not set, falling back to rule-based agent", file=sys.stderr)
-        agent_type = "rule-based"
+        raise ValueError("API_KEY is required for LLM agent")
     
     if agent_type == "llm":
         model_display = MODEL_NAME
