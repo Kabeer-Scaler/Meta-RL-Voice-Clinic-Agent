@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+from fastapi import Body
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from fastapi.responses import FileResponse
@@ -54,7 +55,7 @@ def _promote_route(path: str, method: str) -> None:
 
 
 @app.post("/reset")
-async def reset_endpoint(payload: ResetRequest):
+async def reset_endpoint(payload: ResetRequest = Body(default_factory=ResetRequest)):
     """Reset the shared environment and expose the generated episode id."""
     observation = SHARED_ENV.reset(
         seed=payload.seed,
