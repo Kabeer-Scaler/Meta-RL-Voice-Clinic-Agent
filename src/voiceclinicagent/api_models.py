@@ -81,32 +81,18 @@ class VoiceClinicObservation(Observation):
             super().__init__(**data)
             return
         except TypeError as exc:
-            # Debug: log the exception
-            import sys
-            print(f"[DEBUG] VoiceClinicObservation init caught TypeError: {exc}", file=sys.stderr, flush=True)
-            print(f"[DEBUG] Exception type: {type(exc)}", file=sys.stderr, flush=True)
-            print(f"[DEBUG] Exception message: {str(exc)}", file=sys.stderr, flush=True)
-            
             supports_legacy = _supports_legacy_init_error(exc)
-            print(f"[DEBUG] Supports legacy: {supports_legacy}", file=sys.stderr, flush=True)
-            
             if not supports_legacy:
-                print(f"[DEBUG] Re-raising exception because not legacy error", file=sys.stderr, flush=True)
                 raise
-            
-            print(f"[DEBUG] Using legacy fallback initialization", file=sys.stderr, flush=True)
 
         base_data = {
             "done": data.pop("done", False),
             "reward": data.pop("reward", None),
             "metadata": data.pop("metadata", {}),
         }
-        print(f"[DEBUG] Calling super().__init__ with base_data: {base_data}", file=sys.stderr, flush=True)
         super().__init__(**base_data)
-        print(f"[DEBUG] Setting remaining attributes: {list(data.keys())}", file=sys.stderr, flush=True)
         for key, value in data.items():
             object.__setattr__(self, key, value)
-        print(f"[DEBUG] VoiceClinicObservation init completed successfully", file=sys.stderr, flush=True)
 
 
 class VoiceClinicState(State):

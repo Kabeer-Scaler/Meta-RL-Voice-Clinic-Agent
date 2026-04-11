@@ -24,29 +24,27 @@ endpoints:
     path: /step
     description: "Execute one environment step"
     request_schema:
-      episode_id: string
       action: object
     response_schema:
       observation: object
       reward: float
       done: boolean
-      truncated: boolean
-      info: object
   
   state:
     method: GET
-    path: /state/{episode_id}
+    path: /state
     description: "Get current episode state including final score when complete"
     response_schema:
       episode_id: string
       task_id: string
-      turn_idx: integer
+      step_count: integer
       max_turns: integer
-      done: boolean
-      truncated: boolean
       cumulative_reward: float
       termination_reason: string (optional)
       final_score: float (optional, present when done=true)
+      booking_confirmed: boolean
+      escalated_urgent: boolean
+      escalated_human: boolean
       grade_report: object (optional, present when done=true)
 
 tasks:
